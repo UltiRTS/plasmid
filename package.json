@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "knex": "^0.95.11",
+    "sqlite3": "^5.0.2",
+    "ws": "^8.2.3"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "eslint": "^8.1.0"
+  },
+  "scripts": {
+    "lint": "eslint .  --ext .js"
+  }
+}
