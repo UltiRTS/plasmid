@@ -28,11 +28,7 @@ class database {
   }
 
   authenticate(credentials, client) {
-    return this.knex
-        .from('user')
-        .select('*')
-        .where('username', '=', credentials['usr'])
-        .then((rows) => {
+    return this.knex.from('user').select('*').where('username', '=', credentials['usr']).then((rows) => { //return a prmise
           accessLevel=0;
           // client.loggedIn=false
           console.log('client authenticating');
@@ -41,18 +37,31 @@ class database {
               // get access level
               const accessLevel = row['accessLevel'];
 
-              return [true, accessLevel];
+              return [true, accessLevel]; //resolve the promise as this
             }
           }
-          return [false, accessLevel];
+          return [false, accessLevel]; //resolve the promise as this
         })
         .catch((err) => {
           console.log(err); throw err;
         });
-    /* .finally(() => {
-                knex.destroy();
-            });*/
+
   }
+
+  register(credentials) {
+    
+      return this.knex.from('user').insert({
+        username: credentials['usr'],
+        password: credentials['passwd'],
+        accessLevel: 0,
+      }).into('user').then(() => {
+        return true;
+      });
+    
+  }
+
+
+
 }
 
 module.exports=database;

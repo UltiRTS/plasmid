@@ -28,10 +28,7 @@ class lobbyServer {
                 client.connectivity = 10;
                 client.respondedKeepAlive = true;
                 client.keepAlive = server.processPing(client);
-                client.send(JSON.stringify({
-                  'action': 'LOGIN',
-                  'parameters':
-                  {'isLoggedIn': true, 'accessLevel': accessLevel}}));
+
                 server.stateDump(client, 'LOGIN');
               }
             });
@@ -39,6 +36,24 @@ class lobbyServer {
         console.log('processing messages');
         server.processLoggedClient(client, message);
       }
+
+      else if (message['action']=='REGISTER'&&server.checkRegClient(client,message)){
+        global.database.register(message['parameters'])
+            .then(function(dbRet) {
+              if (dbRet[0]) {
+                client.state = new ClientState('testToken', {
+                  username: message['parameters']['usr'],
+                  accLevel: dbRet[1],
+                });
+                client.connectivity = 10;
+                client.respondedKeepAlive = true;
+                client.keepAlive = server.processPing(client);
+
+                server.stateDump(client, 'REGISTER');
+              }
+            });
+      }
+
     });
 
     eventEmitter.on('disconnect', function(client) {
@@ -51,6 +66,9 @@ class lobbyServer {
     });
   }
 
+  checkRegClient(client, message) { //FIXME: check if the same mac or ip address are used to register multiple accounts, check if the ip address is banned
+    return true;
+  }
 
   processLoggedClient(client, message) {
     const action = message['action'];
