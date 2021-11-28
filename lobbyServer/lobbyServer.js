@@ -282,7 +282,7 @@ class lobbyServer {
           try {
             this.rooms[battleToSetMap].map = mapToSet;
             this.rooms[battleToSetMap].polls[action] = [];
-            autohostClient.autohostMgrSetMap(this.rooms[battleToSetMap]);
+            
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
