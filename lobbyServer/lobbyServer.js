@@ -1,6 +1,8 @@
 /* eslint-disable require-jsdoc */
 const initLobbyServerNetwork = require('../libnetwork/liblobbyServerNetwork');
-const ClientState = require('./clientState').default;
+// const ClientState = require('./clientState').default;
+
+const ClientState = require('./clientState');
 const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
 
@@ -76,7 +78,7 @@ class lobbyServer {
 
         // now this user has joined chat
         // add this user to the chat's list of users
-        client.joinedChats.push(chatToJoin);
+        client.state.joinChat(chatToJoin);
         for (const ppl of this.chats[chatToJoin]) {
           // now let everyone else know
           this.stateDump(ppl, 'JOINCHAT');
@@ -133,9 +135,7 @@ class lobbyServer {
           console.log('NU');
         } // hackery going on
         // remove this user from the chat's list of users
-        client.joinedChats.splice(client.joinedChats.indexOf(chatToLeave), 1);
-        client.send(JSON.stringify({
-          'action': 'LEAVECHAT', 'parameters': {'chatName': chatToLeave}}));
+        client.state.leaveChat(chatToLeave);
         for (const ppl of this.chats[chatToLeave]) {
           this.stateDump(ppl, 'LEAVECHAT');
         }
@@ -167,7 +167,7 @@ class lobbyServer {
             'responsibleAutohost': 0,
           };
         }
-        client.joinedRoom = battleToJoin;
+        client.joinRoom(battleToJoin);
         for (const ppl of this.rooms[battleToJoin].clients) {
           // now let everyone else know
           this.stateDump(ppl, 'JOINGAME');
@@ -192,7 +192,7 @@ class lobbyServer {
           console.log(e);
           return;
         } // hackery going on
-        client.joinedRoom = '';
+        client.leaveRoom(battleToLeave);
         for (const ppl of this.rooms[battleToLeave].clients) {
           this.stateDump(ppl, 'LEAVEGAME');
         }
@@ -217,7 +217,7 @@ class lobbyServer {
         // if the poll is 50% or more, start the game
         if (this.rooms[battleToStart].polls[action].length >=
           Math.floor(this.rooms[battleToStart].numofPpl / 2) ||
-          client.usrname ==
+          client.state.username ==
           this.rooms[battleToStart].host.usrname) {
           try {
             this.rooms[battleToStart].isStarted = true;
@@ -258,7 +258,7 @@ class lobbyServer {
         if (
           this.rooms[battleToStop].polls[action].length >=
             Math.floor(this.rooms[battleToStop].numofPpl / 2) ||
-          client.usrname==this.rooms[battleToStop].host.usrname) {
+          client.state.username==this.rooms[battleToStop].host.usrname) {
           try {
             this.rooms[battleToStop].isStarted = false;
             this.rooms[battleToStop].polls[action] = [];
@@ -324,17 +324,14 @@ class lobbyServer {
     const games = this.getAllGames();
 
     // get all chats that have this user in them
-    const chats = ppl.joinedChats;
-
-
+    const chats = ppl.state.chats;
     const chatMsg = ppl.chatMsg;
 
     // cdump the poll as well if the person is in a game
     let poll = {};
-    if (ppl.joinedRoom != '') {
-      poll = getRoomPoll(ppl.joinedRoom);
+    if (ppl.state.room != '') {
+      poll = getRoomPoll(ppl.state.room);
     }
-
 
     const response = {'usrstats': ppl.state,
       'games': games,
