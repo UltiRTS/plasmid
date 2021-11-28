@@ -258,7 +258,41 @@ class lobbyServer {
         break;
       }
 
+      case 'SETMAP': { // set the map
+        let battleToSetMap;
+        let mapToSet;
+        try {
+          battleToSetMap = message['parameters']['battleName'];
+          mapToSet = message['parameters']['map'];
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'invalid battle name');
+        }
 
+        // add this cmd to the poll if it's not in the poll
+        if (!this.rooms[battleToSetMap].polls.hasOwnProperty(action)) {
+          this.rooms[battleToSetMap].polls[action] = [];
+        }
+        this.rooms[battleToSetMap].polls[action].push(client);
+
+        // if the poll is 50% or more, start the game
+        if (this.rooms[battleToSetMap].polls[action].length >=
+          Math.floor(this.rooms[battleToSetMap].numofPpl / 2) ||
+          client.state.username ==
+          this.rooms[battleToSetMap].host.usrname) {
+          try {
+            this.rooms[battleToSetMap].map = mapToSet;
+            this.rooms[battleToSetMap].polls[action] = [];
+            autohostClient.autohostMgrSetMap(this.rooms[battleToSetMap]);
+          } catch (e) {
+            console.log('NU', e);
+          } // hackery going on
+        }
+
+        for (const ppl of this.rooms[battleToSetMap].clients) {
+          this.stateDump(ppl, 'SETMAP');
+        }
+        break;
+      }
       case 'EXITGAME': {// set isStarted to false and let everyone else know
         let battleToStop;
         try {
