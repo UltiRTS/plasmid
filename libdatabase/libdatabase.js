@@ -33,13 +33,13 @@ class database {
         .select('*')
         .where('username', '=', credentials['usr'])
         .then((rows) => {
-          accessLevel=0;
+          let accessLevel=0;
           // client.loggedIn=false
           console.log('client authenticating');
           for (const row of rows) {
             if (row['password']==credentials['passwd']) {
               // get access level
-              const accessLevel = row['accessLevel'];
+              accessLevel = row['accessLevel'];
 
               return [true, accessLevel];
             }

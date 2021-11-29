@@ -8,6 +8,8 @@ const {clearInterval} = require('timers');
 
 
 class lobbyServer {
+  chats = [];
+
   constructor() {
     console.log('lobby server started!');
     initLobbyServerNetwork();
