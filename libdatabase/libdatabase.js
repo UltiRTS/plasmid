@@ -41,17 +41,24 @@ class database {
               // get access level
               accessLevel = row['accessLevel'];
 
-              return [true, accessLevel];
+              return [true, accessLevel]; // resolve the promise as this
             }
           }
-          return [false, accessLevel];
+          return [false, accessLevel]; // resolve the promise as this
         })
         .catch((err) => {
           console.log(err); throw err;
         });
-    /* .finally(() => {
-                knex.destroy();
-            });*/
+  }
+
+  register(credentials) {
+    return this.knex.from('user').insert({
+      username: credentials['usr'],
+      password: credentials['passwd'],
+      accessLevel: 0,
+    }).into('user').then(() => {
+      return true;
+    });
   }
 }
 

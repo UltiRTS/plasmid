@@ -30,16 +30,29 @@ class lobbyServer {
                 client.connectivity = 10;
                 client.respondedKeepAlive = true;
                 client.keepAlive = server.processPing(client);
-                client.send(JSON.stringify({
-                  'action': 'LOGIN',
-                  'parameters':
-                  {'isLoggedIn': true, 'accessLevel': accessLevel}}));
+
                 server.stateDump(client, 'LOGIN');
               }
             });
       } else if (client.loggedIn) {
         console.log('processing messages');
         server.processLoggedClient(client, message);
+      } else if (message['action']=='REGISTER' &&
+      server.checkRegClient(client, message)) {
+        global.database.register(message['parameters'])
+            .then(function(dbRet) {
+              if (dbRet[0]) {
+                client.state = new ClientState('testToken', {
+                  username: message['parameters']['usr'],
+                  accLevel: dbRet[1],
+                });
+                client.connectivity = 10;
+                client.respondedKeepAlive = true;
+                client.keepAlive = server.processPing(client);
+
+                server.stateDump(client, 'REGISTER');
+              }
+            });
       }
     });
 
@@ -53,6 +66,13 @@ class lobbyServer {
     });
   }
 
+  checkRegClient(client, message) {
+    // FIXME:
+    // check if the same mac or ip address are
+    // used to register multiple accounts,
+    // check if the ip address is banned
+    return true;
+  }
 
   processLoggedClient(client, message) {
     const action = message['action'];
@@ -242,7 +262,40 @@ class lobbyServer {
         break;
       }
 
+      case 'SETMAP': { // set the map
+        let battleToSetMap;
+        let mapToSet;
+        try {
+          battleToSetMap = message['parameters']['battleName'];
+          mapToSet = message['parameters']['map'];
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'invalid battle name');
+        }
 
+        // add this cmd to the poll if it's not in the poll
+        if (!this.rooms[battleToSetMap].polls.hasOwnProperty(action)) {
+          this.rooms[battleToSetMap].polls[action] = [];
+        }
+        this.rooms[battleToSetMap].polls[action].push(client);
+
+        // if the poll is 50% or more, start the game
+        if (this.rooms[battleToSetMap].polls[action].length >=
+          Math.floor(this.rooms[battleToSetMap].numofPpl / 2) ||
+          client.state.username ==
+          this.rooms[battleToSetMap].host.usrname) {
+          try {
+            this.rooms[battleToSetMap].map = mapToSet;
+            this.rooms[battleToSetMap].polls[action] = [];
+          } catch (e) {
+            console.log('NU', e);
+          } // hackery going on
+        }
+
+        for (const ppl of this.rooms[battleToSetMap].clients) {
+          this.stateDump(ppl, 'SETMAP');
+        }
+        break;
+      }
       case 'EXITGAME': {// set isStarted to false and let everyone else know
         let battleToStop;
         try {
