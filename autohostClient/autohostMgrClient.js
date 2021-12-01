@@ -10,6 +10,7 @@ class autohostMgrClient {
         console.log('->System Component Online: ' + autohost);
       });
 
+
       config['autohostMgr'][autohost].on('message', function incoming(message) {
         eventEmitter.emit('commandFromAutohost', ws, JSON.parse(message));
       });

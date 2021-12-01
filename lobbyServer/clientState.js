@@ -15,6 +15,15 @@ class ClientState {
     this.token = _token;
     this.username = options.username;
     this.accLevel = options.accLevel;
+    this.loggedIn = true;
+  }
+
+  login() {
+    this.loggedIn = true;
+  }
+
+  logout() {
+    this.loggedIn = false;
   }
 
   joinChat(chatName) {

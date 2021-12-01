@@ -41,9 +41,12 @@ class database {
               // get access level
               accessLevel = row['accessLevel'];
 
+              console.log('Successfully logined');
               return [true, accessLevel]; // resolve the promise as this
             }
           }
+          console.log('Failed to login with', credentials['usr'],
+              'password: ', credentials['passwd']);
           return [false, accessLevel]; // resolve the promise as this
         })
         .catch((err) => {
@@ -57,7 +60,11 @@ class database {
       password: credentials['passwd'],
       accessLevel: 0,
     }).into('user').then(() => {
+      console.log('USER REGISTERED');
       return true;
+    }).catch((e)=>{
+      console.log('ERROR: ', e);
+      return e;
     });
   }
 }

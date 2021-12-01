@@ -2,10 +2,9 @@
 const initLobbyServerNetwork = require('../libnetwork/liblobbyServerNetwork');
 // const ClientState = require('./clientState').default;
 
-const ClientState = require('./clientState');
+const {ClientState} = require('./clientState');
 const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
-
 
 class lobbyServer {
   chats = [];
@@ -26,6 +25,8 @@ class lobbyServer {
                   username: message['parameters']['usr'],
                   accLevel: dbRet[1],
                 });
+                client.state.login();
+
                 console.log('client authenticated');
                 client.connectivity = 10;
                 client.respondedKeepAlive = true;
@@ -34,14 +35,14 @@ class lobbyServer {
                 server.stateDump(client, 'LOGIN');
               }
             });
-      } else if (client.loggedIn) {
+      } else if ('state' in client && client.state.loggedIn) {
         console.log('processing messages');
         server.processLoggedClient(client, message);
       } else if (message['action']=='REGISTER' &&
       server.checkRegClient(client, message)) {
         global.database.register(message['parameters'])
             .then(function(dbRet) {
-              if (dbRet[0]) {
+              if (dbRet) {
                 client.state = new ClientState('testToken', {
                   username: message['parameters']['usr'],
                   accLevel: dbRet[1],
