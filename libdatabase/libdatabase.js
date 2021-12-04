@@ -27,7 +27,7 @@ class database {
     }
   }
 
-  authenticate(credentials, client) {
+  authenticate(credentials) {
     return this.knex
         .from('user')
         .select('*')
@@ -66,6 +66,21 @@ class database {
       console.log('ERROR: ', e);
       return e;
     });
+  }
+
+  checkDup(credentials) {
+    return this.knex.from('user').select('*')
+        .where('username', '=', credentials['usr'])
+        .then((rows) => {
+          console.log('client checking dup');
+          if (rows.length>0) {
+            return true;
+          }
+          return false;
+        })
+        .catch((err) => {
+          console.log(err); throw err;
+        });
   }
 }
 

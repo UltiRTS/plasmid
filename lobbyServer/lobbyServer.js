@@ -38,8 +38,8 @@ class LobbyServer {
       } else if ('state' in client && client.state.loggedIn) {
         console.log('processing messages');
         server.processLoggedClient(client, message);
-      } else if (message['action']=='REGISTER' &&
-      server.checkRegClient(client, message)) {
+      } else if (message['action'] == 'REGISTER' &&
+        server.checkRegClient(client, message)) {
         global.database.register(message['parameters'])
             .then(function(dbRet) {
               if (dbRet) {
@@ -72,7 +72,12 @@ class LobbyServer {
     // check if the same mac or ip address are
     // used to register multiple accounts,
     // check if the ip address is banned
-    return true;
+    const isDupOK = !global.database.checkDup(message['parameters']);
+    const isBanOK = true;
+    if (isDupOK && isBanOK) {
+      return true;
+    }
+    return false;
   }
 
   processLoggedClient(client, message) {
@@ -131,7 +136,7 @@ class LobbyServer {
             this.stateDump(ppl, 'SAYCHAT');
             ppl.chatMsg = {'channelName': '', 'msg': ''};
             if (this.rooms.hasOwnProperty(channelName)) {
-              const roomObj=this.rooms[channelName];
+              const roomObj = this.rooms[channelName];
               autohostClient.autohostMgrSayBattle(roomObj, msg);
             }
           }
@@ -190,7 +195,7 @@ class LobbyServer {
             'responsibleAutohost': 0,
           };
         }
-        client.joinRoom(battleToJoin);
+        client.state.joinRoom(battleToJoin);
         for (const ppl of this.rooms[battleToJoin].clients) {
           // now let everyone else know
           this.stateDump(ppl, 'JOINGAME');
@@ -215,7 +220,7 @@ class LobbyServer {
           console.log(e);
           return;
         } // hackery going on
-        client.leaveRoom(battleToLeave);
+        client.state.leaveRoom(battleToLeave);
         for (const ppl of this.rooms[battleToLeave].clients) {
           this.stateDump(ppl, 'LEAVEGAME');
         }
@@ -313,8 +318,8 @@ class LobbyServer {
         // if the poll is 50% or more, exit the game
         if (
           this.rooms[battleToStop].polls[action].length >=
-            Math.floor(this.rooms[battleToStop].numofPpl / 2) ||
-          client.state.username==this.rooms[battleToStop].host.usrname) {
+          Math.floor(this.rooms[battleToStop].numofPpl / 2) ||
+          client.state.username == this.rooms[battleToStop].host.usrname) {
           try {
             this.rooms[battleToStop].isStarted = false;
             this.rooms[battleToStop].polls[action] = [];
@@ -356,7 +361,8 @@ class LobbyServer {
 
   clientSendNotice(client, type, msg) {
     client.send(JSON.stringify({
-      'action': 'NOTICE', 'parameters': {'type': type, 'msg': msg}}));
+      'action': 'NOTICE', 'parameters': {'type': type, 'msg': msg},
+    }));
   }
 
   logOutClient(client) { // server inited disconnect
@@ -367,7 +373,9 @@ class LobbyServer {
 
     // remove client from all battles
     for (const battle of client.joinedBattles) {
-      this.processLoggedClientCmd('LEAVEGAME', client, {'battleName': battle});
+      this.processLoggedClientCmd('LEAVEGAME', client, {
+        'battleName': battle,
+      });
     }
 
     clearInterval(client[token].keepAlive);
@@ -375,7 +383,7 @@ class LobbyServer {
 
   // set an event listener for client disconnect
 
-  stateDump(ppl, triggeredBy='DefaultTrigger') {
+  stateDump(ppl, triggeredBy = 'DefaultTrigger') {
     // get all games
     const games = this.getAllGames();
 
@@ -389,16 +397,19 @@ class LobbyServer {
       poll = getRoomPoll(ppl.state.room);
     }
 
-    const response = {'usrstats': ppl.state,
+    const response = {
+      'usrstats': ppl.state,
       'games': games,
       'chats': chats,
       'chatmsg': chatMsg,
-      'poll': poll};
+      'poll': poll,
+    };
 
     ppl.send(JSON.stringify({
       'action': 'stateDump',
       triggeredBy,
-      'paramaters': response}));
+      'paramaters': response,
+    }));
   }
 
   getAllGames() {
@@ -406,11 +417,12 @@ class LobbyServer {
 
     // eslint-disable-next-line guard-for-in
     for (const battle in this.rooms) {
-      const players=getAllPlayers(this.rooms[battle]);
+      const players = getAllPlayers(this.rooms[battle]);
       games.push({
         'battleName': battle,
         'isStarted': this.rooms[battle].isStarted,
-        'players': players});
+        'players': players,
+      });
     }
     return games;
   }
@@ -428,7 +440,7 @@ class LobbyServer {
     // eslint-disable-next-line guard-for-in
     for (const action in this.rooms[battle].polls) {
       poll[action] =
-       this.rooms[battle].polls[action].length/this.rooms[battle].numofPpl;
+        this.rooms[battle].polls[action].length / this.rooms[battle].numofPpl;
     }
     return poll;
   }
