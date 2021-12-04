@@ -2,7 +2,7 @@
 /* eslint-disable guard-for-in */
 initAutohostMgrClientNetwork = require('../libnetwork/libautohostMgrNetwork');
 
-class autohostMgrClient {
+class AutohostMgrClient {
   constructor() {
     for (const autohost in config['autohostMgr']) {
       config['autohostMgr'][autohost] = initAutohostMgrClientNetwork(autohost);
@@ -87,4 +87,4 @@ class autohostMgrClient {
     );
   }
 }
-module.exports = autohostMgrClient;
+module.exports = AutohostMgrClient;

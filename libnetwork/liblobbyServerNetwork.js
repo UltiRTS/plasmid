@@ -6,7 +6,7 @@ function initLobbyServerNetwork() {
   const wss = new WebSocketServer({port: 9090});
   wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
-      // if there is a message, 
+      // if there is a message,
       // add this client to memory and let lobbyserver know
 
       eventEmitter.emit('commandFromClient', ws,

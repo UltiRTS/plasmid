@@ -6,7 +6,7 @@ const {ClientState} = require('./clientState');
 const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
 
-class lobbyServer {
+class LobbyServer {
   chats = [];
 
   constructor() {
@@ -434,4 +434,4 @@ class lobbyServer {
   }
 }
 
-module.exports = lobbyServer;
+module.exports = LobbyServer;

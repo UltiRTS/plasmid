@@ -1,6 +1,6 @@
 config={
-    'isUsingSQLITE':true,
-    'salt':'123',
-    'autohostMgr':['127.0.0.1:8080']
-}
-module.exports=config
+  'isUsingSQLITE': true,
+  'salt': '123',
+  'autohostMgr': ['127.0.0.1:8080'],
+};
+module.exports=config;
