@@ -191,8 +191,9 @@ class LobbyServer {
             'mods': '',
             'password': '',
             'isStarted': false,
-            // in the future this could be returned by a load balancing function
-            'responsibleAutohost': 0,
+            'team': {}, // {'A': ['xiaoming','xiaozhang'], 'B': ['zhangsan']}
+            'responsibleAutohost': 0, // in the future this could be
+            // returned by a load balancing function
           };
         }
         client.state.joinRoom(battleToJoin);
@@ -267,6 +268,48 @@ class LobbyServer {
         }
         break;
       }
+
+      case 'SETTEAM': { // set team
+        let battleToSetTeam; let team;
+        try {
+          battleToSetTeam = message['parameters']['battleName'];
+          team = message['parameters']['team'];
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'invalid battle name');
+        }
+
+        // add this cmd to the poll if it's not in the poll
+        if (!this.rooms[battleToSetTeam].polls.hasOwnProperty(action)) {
+          this.rooms[battleToSetTeam].polls[action] = [];
+        }
+        this.rooms[battleToSetTeam].polls[action].push(client);
+
+        // if the poll is 50% or more, start the game
+        if (this.rooms[battleToSetTeam].polls[action].length >=
+          Math.floor(this.rooms[battleToSetTeam].numofPpl / 2) ||
+          client.state.username ==
+          this.rooms[battleToSetTeam].host.usrname) {
+          try {
+            this.rooms[battleToSetTeam].polls[action] = [];
+            this.rooms[battleToSetTeam].team[team] =team;
+          } catch (e) {
+            console.log('NU', e);
+          } // hackery going on
+        } else {
+          // this.stateDump(client, 'STARTGAME');
+          this.clientSendNotice(client,
+              'error',
+              'not enough players to set team');
+        }
+
+
+        for (const ppl of this.rooms[battleToSetTeam].clients) {
+          this.stateDump(ppl, 'SETTEAM');
+        }
+
+        break;
+      }
+
 
       case 'SETMAP': { // set the map
         let battleToSetMap;
@@ -393,8 +436,10 @@ class LobbyServer {
 
     // cdump the poll as well if the person is in a game
     let poll = {};
+    let team = {};
     if (ppl.state.room != '') {
       poll = getRoomPoll(ppl.state.room);
+      team = this.rooms[ppl.state.room].team;
     }
 
     const response = {
@@ -403,6 +448,7 @@ class LobbyServer {
       'chats': chats,
       'chatmsg': chatMsg,
       'poll': poll,
+      'team': team,
     };
 
     ppl.send(JSON.stringify({
