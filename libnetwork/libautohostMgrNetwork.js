@@ -1,11 +1,25 @@
-/* eslint-disable require-jsdoc */
-wsmodule = require('ws');
-const WebSocket = wsmodule.WebSocket;
-// initAutohostMgrClientNetwork = require('../libnetwork/libautohostMgrNetwork')
+const ws = require('ws');
+const WebSocket = ws.WebSocket;
+
+/**
+ * @class
+ */
+class AutohostManager {
+  availables = [];
+  /**
+   *
+   * @param {Array} availableServers
+   */
+  constructor(availableServers) {
+    this.availables = availableServers;
+  }
 
 
-function connect(addr) {
-  return ws = new WebSocket('ws://'+addr);
+// TODO: need do a symmetric crypto test
+//  queryStatus(address, port) {
+//    const ws = new WebSocket(`ws://${address}:${port}`);
+//  }
 }
 
-module.exports=connect;
+
+module.exports = AutohostManager;
