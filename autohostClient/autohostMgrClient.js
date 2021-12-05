@@ -62,7 +62,7 @@ class AutohostMgrClient {
     const roomID=roomObj.ID;
     config['autohostMgr'][autohost].send(
         JSON.stringify({
-          'action': 'NEWROOM',
+          'action': 'STARTGAME',
           'parameters': {'roomID': roomID, 'obj': roomObj}}),
     );
   }
