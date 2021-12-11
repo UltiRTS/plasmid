@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-=======
+
 /* eslint-disable require-jsdoc */
 /* eslint-disable guard-for-in */
 initAutohostMgrClientNetwork = require('../libnetwork/libautohostMgrNetwork');
@@ -90,4 +89,3 @@ class AutohostMgrClient {
   }
 }
 module.exports = AutohostMgrClient;
->>>>>>> 07a54a19f3c45621ea92d6c7ce5aa7de4f316958

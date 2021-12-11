@@ -3,7 +3,7 @@
 // var MD5 = require("crypto-js/md5");
 // MD5("Message").toString()
 
-
+const crypto = require('crypto');
 class database {
   constructor() {
     if (global.config['isUsingSQLITE']) {
@@ -37,7 +37,7 @@ class database {
           // client.loggedIn=false
           console.log('client authenticating');
           for (const row of rows) {
-            if (row['password']==credentials['passwd']) {
+            if (row['password']==this.hashPasswd(credentials['passwd'])) {
               // get access level
               accessLevel = row['accessLevel'];
 
@@ -55,9 +55,11 @@ class database {
   }
 
   register(credentials) {
+    // eslint-disable-next-line max-len
+    const passwdHash=this.hashPasswd(credentials['passwd']);
     return this.knex.from('user').insert({
       username: credentials['usr'],
-      password: credentials['passwd'],
+      password: passwdHash,
       accessLevel: 0,
     }).into('user').then(() => {
       console.log('USER REGISTERED');
@@ -81,6 +83,10 @@ class database {
         .catch((err) => {
           console.log(err); throw err;
         });
+  }
+
+  hashPasswd(passwd) {
+    crypto.createHash('md5').update(passwd+'aSmolAmountofSalt').digest('hex');
   }
 }
 
