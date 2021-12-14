@@ -1,5 +1,6 @@
-const {msgSignKey} = require('../config.js');
-const {decript, encrypt} = require('../libCrypto/libCrypto.js');
+// const {msgSignKey} = require('../config.js'); // are these two lines needed?
+// eslint-disable-next-line max-len
+// const {decript, encrypt} = require('../libCrypto/libCrypto.js');// are these two lines needed?
 const {AutohostClient} = require('./autohostClient');
 
 /**
@@ -64,7 +65,7 @@ class AutohostManager {
   queryBattleStatus(server, battleId) {
     return {};
   }
-
+/* are you sure this is needed? autohostclient already has this function
   // eslint-disable-next-line require-jsdoc
   encryptMsg(msg) {
     return encrypt(msg, msgSignKey);
@@ -73,7 +74,7 @@ class AutohostManager {
   // eslint-disable-next-line require-jsdoc
   parseMsg(msg) {
     return decript(msg, msgSignKey);
-  }
+  }*/
 }
 
 
