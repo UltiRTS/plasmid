@@ -5,25 +5,18 @@
 
 const crypto = require('crypto');
 class database {
-  constructor() {
-    if (global.config['isUsingSQLITE']) {
-      this.knex = require('knex')({
-        client: 'sqlite3',
-        connection: () => ({
-          filename: './testDB.db',
-        }),
-      });
-    } else {
-      this.knex = require('knex')({
-        client: 'mysql',
-        connection: {
-          host: '127.0.0.1',
-          port: 3306,
-          user: 'your_database_user',
-          password: 'your_database_password',
-          database: 'myapp_test',
-        },
-      });
+  constructor(dbType) {
+    switch (dbType) {
+      case 'sqlite':
+        this.knex = require('knex')({
+          client: 'sqlite3',
+          connection: () => ({
+            filename: './testDB.db',
+          }),
+        });
+        break;
+      default:
+        break;
     }
   }
 
@@ -86,7 +79,9 @@ class database {
   }
 
   hashPasswd(passwd) {
-    crypto.createHash('md5').update(passwd+'aSmolAmountofSalt').digest('hex');
+    return crypto.createHash('md5')
+        .update(passwd+'aSmolAmountofSalt')
+        .digest('hex');
   }
 }
 

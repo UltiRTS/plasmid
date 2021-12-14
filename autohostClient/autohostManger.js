@@ -1,17 +1,22 @@
 const {msgSignKey} = require('../config.js');
 const {decript, encrypt} = require('../libCrypto/libCrypto.js');
+const {AutohostClient} = require('./autohostClient');
 
 /**
- * @class
+ * @class AutohostManger
+ * @description this class is for handling autohost client
  */
 class AutohostManager {
-  availables = [];
+  availables = {};
   /**
    *
    * @param {Array} availableServers
    */
   constructor(availableServers) {
-    this.availables = availableServers;
+    for (const addr of availableServers) {
+      const autohostClient = new AutohostClient(addr);
+      this.availables[addr] = autohostClient;
+    }
   }
 
   /**
@@ -19,7 +24,8 @@ class AutohostManager {
    * @return {String} returns a random server location
    */
   rollServer() {
-    return this.availables[Math.floor(Math.random() * this.availables.length)];
+    const serverAddrs = Object.keys(this.availables);
+    return serverAddrs[Math.floor(Math.random() * serverAddrs.length)];
   }
 
   /**
@@ -34,17 +40,8 @@ class AutohostManager {
    *   ...
    * }
    */
-  queryServerStatus(server) {
-    let result = null;
-    fetch(`${server}/status`).then((res) => {
-      res.json().then((json) => {
-        result = res;
-      });
-    }).catch((err)=> {
-      console.log(err);
-    });
-
-    return result;
+  queryClientStatus(server) {
+    return this.availables[server].status();
   }
 
   /**
@@ -54,19 +51,8 @@ class AutohostManager {
    * @return {object} returns a json object of game host data
    */
   sendHostRequest(server, gameData) {
-    const result = null;
-    fetch(`${server}/host`, {
-      method: 'POST',
-      body: encrypt(JSON.stringify(gameData), msgSignKey),
-    }).then((res)=> {
-      res.json().then((json) => {
-        result = res;
-      });
-    }).catch((err)=> {
-      console.log(err);
-    });
-
-    return result;
+    this.availables[server].excute('createBattle', gameData);
+    return {};
   }
 
   /**
@@ -76,15 +62,7 @@ class AutohostManager {
    * @return {object} returns a json object of battle info
    */
   queryBattleStatus(server, battleId) {
-    const result = null;
-    fetch(`${server}/battle/${battleId}`).then((res)=> {
-      res.json().then((json) => {
-        result = res;
-      });
-    }).catch((err)=>{
-      console.log(err);
-    });
-    return result;
+    return {};
   }
 
   // eslint-disable-next-line require-jsdoc

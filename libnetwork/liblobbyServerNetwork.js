@@ -23,4 +23,6 @@ function initLobbyServerNetwork() {
 }
 
 
-module.exports=initLobbyServerNetwork;
+module.exports= {
+  initLobbyServerNetwork,
+};

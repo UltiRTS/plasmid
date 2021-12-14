@@ -1,5 +1,5 @@
 /* eslint-disable require-jsdoc */
-const initLobbyServerNetwork = require('../libnetwork/liblobbyServerNetwork');
+const {initLobbyServerNetwork} = require('../libnetwork/liblobbyServerNetwork');
 // const ClientState = require('./clientState').default;
 
 const {ClientState} = require('./clientState');
@@ -72,12 +72,12 @@ class LobbyServer {
     // check if the same mac or ip address are
     // used to register multiple accounts,
     // check if the ip address is banned
-    const isDupOK = !global.database.checkDup(message['parameters']);
-    const isBanOK = true;
-    if (isDupOK && isBanOK) {
-      return true;
-    }
-    return false;
+    //    const isDupOK = !global.database.checkDup(message['parameters']);
+    //    const isBanOK = true;
+    //    if (isDupOK && isBanOK) {
+    //      return true;
+    //    }
+    return true;
   }
 
   processLoggedClient(client, message) {
