@@ -55,13 +55,13 @@ class ClientState {
 
   getState() {
     return {
-      loggedIn,
-      accLevel,
-      chats,
-      room,
-      team,
-      token,
-      username,
+      loggedIn: this.loggedIn,
+      accLevel: this.accLevel,
+      chats: this.chats,
+      room: this.room,
+      team: this.team,
+      token: this.token,
+      username: this.username,
     };
   }
 }

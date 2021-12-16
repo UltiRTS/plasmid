@@ -7,7 +7,8 @@ const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
-  chats = [];
+  chats = {};
+  rooms = {};
 
   constructor() {
     console.log('lobby server started!');
@@ -36,7 +37,7 @@ class LobbyServer {
               }
             });
       } else if ('state' in client && client.state.loggedIn) {
-        console.log('processing messages');
+        // console.log('processing messages');
         server.processLoggedClient(client, message);
       } else if (message['action'] == 'REGISTER' &&
         server.checkRegClient(client, message)) {
@@ -115,7 +116,8 @@ class LobbyServer {
         break;
       }
       case 'SAYCHAT': {
-        let channelName; let chatMsg;
+        let channelName;
+        let chatMsg;
         try {
           channelName = message['parameters']['chatName'];
           chatMsg = message['parameters']['msg'];
@@ -135,10 +137,11 @@ class LobbyServer {
             ppl.chatMsg = {'channelName': channelName, 'msg': chatMsg};
             this.stateDump(ppl, 'SAYCHAT');
             ppl.chatMsg = {'channelName': '', 'msg': ''};
-            if (this.rooms.hasOwnProperty(channelName)) {
-              const roomObj = this.rooms[channelName];
-              autohostClient.autohostMgrSayBattle(roomObj, msg);
-            }
+            // TODO: add autohost msg relay
+            // if (this.rooms.hasOwnProperty(channelName)) {
+            //   const roomObj = this.rooms[channelName];
+            //   autohostClient.autohostMgrSayBattle(roomObj, msg);
+            // }
           }
         } else {
           this.stateDump(client, 'SAYCHAT');
@@ -158,12 +161,13 @@ class LobbyServer {
           this.chats[chatToLeave]
               .splice(this.chats[chatToLeave].indexOf(client), 1);
           console.log('LEAVING CHAT', chatToLeave);
-          console.log(this.chats);
+          // console.log(this.chats);
         } catch {
           console.log('NU');
         } // hackery going on
         // remove this user from the chat's list of users
         client.state.leaveChat(chatToLeave);
+        this.stateDump(client, 'LEAVECHAT');
         for (const ppl of this.chats[chatToLeave]) {
           this.stateDump(ppl, 'LEAVECHAT');
         }
@@ -186,7 +190,7 @@ class LobbyServer {
             'numofPpl': 1,
             'host': client,
             'clients': [client],
-            'ID': this.rooms.length,
+            'ID': Object.keys(this.rooms).length,
             'map': '',
             'mods': '',
             'password': '',
@@ -427,25 +431,28 @@ class LobbyServer {
   // set an event listener for client disconnect
 
   stateDump(ppl, triggeredBy = 'DefaultTrigger') {
-    // get all games
-    const games = this.getAllGames();
+    // TODO: should add a filter for messages delivering
 
+    // get all games
+    // const games = this.getAllGames();
+    const games = this.rooms;
+
+    console.log('PPL STATE: ', ppl.state);
     // get all chats that have this user in them
-    const chats = ppl.state.chats;
     const chatMsg = ppl.chatMsg;
 
     // cdump the poll as well if the person is in a game
     let poll = {};
     let team = {};
     if (ppl.state.room != '') {
-      poll = getRoomPoll(ppl.state.room);
+      poll = this.getRoomPoll(ppl.state.room);
       team = this.rooms[ppl.state.room].team;
     }
 
     const response = {
-      'usrstats': ppl.state,
+      'usrstats': ppl.state.getState(),
       'games': games,
-      'chats': chats,
+      'chats': Object.keys(this.chats),
       'chatmsg': chatMsg,
       'poll': poll,
       'team': team,
