@@ -9,7 +9,8 @@ const {clearInterval} = require('timers');
 class LobbyServer {
   chats = {};
   rooms = {};
-  players = {};
+  players = {}; // holds all connected clients; this is
+  // different from rooms['battlename'].clients!!
 
   constructor() {
     console.log('lobby server started!');
@@ -286,6 +287,8 @@ class LobbyServer {
         try {
           battleToSetTeam = message['parameters']['battleName'];
           team = message['parameters']['team'];
+          // {'tom':A,'bob':'A','alice':'B','xiaoming':'B'}
+
           playerName = message['parameters']['player'];
           player = this.players[playerName];
         } catch (e) {
@@ -304,9 +307,10 @@ class LobbyServer {
           this.rooms[battleToSetTeam].host.usrname) {
           try {
             this.rooms[battleToSetTeam].polls[action] = [];
-            player.state.joinTeam(team);
+            player.state.joinTeam(team[playerName]);
             // client.state.joinTeam(team);
-            // this.rooms[battleToSetTeam].team[team] =team;
+            this.rooms[battleToSetTeam].team=team; // overwrite
+            // the memory with client submitted team
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
