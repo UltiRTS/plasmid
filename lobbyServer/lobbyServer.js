@@ -434,8 +434,8 @@ class LobbyServer {
     // TODO: should add a filter for messages delivering
 
     // get all games
-    // const games = this.getAllGames();
-    const games = this.rooms;
+    const games = this.getAllGames();
+    // const games = this.rooms;
 
     console.log('PPL STATE: ', ppl.state);
     // get all chats that have this user in them
@@ -470,7 +470,7 @@ class LobbyServer {
 
     // eslint-disable-next-line guard-for-in
     for (const battle in this.rooms) {
-      const players = getAllPlayers(this.rooms[battle]);
+      const players = this.getAllPlayers(this.rooms[battle]);
       games.push({
         'battleName': battle,
         'isStarted': this.rooms[battle].isStarted,
