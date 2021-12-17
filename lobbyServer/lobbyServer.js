@@ -316,8 +316,9 @@ class LobbyServer {
                 this.clientSendNotice(client,
                     'info',
                     'The requested team does not cover all players in the room');
+              } else {
+                ppl.state.joinTeam(team[ppl.state.username]);
               }
-              ppl.state.joinTeam(team[ppl.state.username]);
               // console.log(ppl.state);
               // console.log(team[ppl.state.username]);
             }
@@ -330,11 +331,12 @@ class LobbyServer {
           // eslint-disable-next-line guard-for-in
           for (const existingPlayer in this.rooms[battleToSetTeam].clients) {
             // eslint-disable-next-line max-len
-            this.rooms[battleToSetTeam].team[existingPlayer]=team[existingPlayer];
-            if (team[ppl.state.username] == undefined) {
+            if (team[this.rooms[battleToSetTeam].clients[existingPlayer].state.username] == undefined) {
               this.clientSendNotice(client,
                   'info',
                   'The requested team does not cover all players in the room');
+            } else {
+              this.rooms[battleToSetTeam].team[existingPlayer]=team[existingPlayer];
             }
           }
         } else {
