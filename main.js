@@ -13,9 +13,5 @@ const EventEmitter = require('events');
 global.eventEmitter = new EventEmitter();
 
 
-/* BUSINESS GLOBAL VAR*/
-global.clients = {};
-
-
 /* START BUSINESS LOGIC*/
 lobbyServer=new PlasmidLobbyServer();

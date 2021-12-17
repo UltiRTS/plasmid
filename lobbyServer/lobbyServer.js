@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 const {initLobbyServerNetwork} = require('../libnetwork/liblobbyServerNetwork');
 // const ClientState = require('./clientState').default;
@@ -30,7 +31,7 @@ class LobbyServer {
                 });
                 client.state.login();
 
-                console.log('client authenticated');
+                // console.log('client authenticated');
                 client.connectivity = 10;
                 client.respondedKeepAlive = true;
                 client.keepAlive = server.processPing(client);
@@ -63,7 +64,7 @@ class LobbyServer {
     });
 
     eventEmitter.on('disconnect', function(client) {
-      console.log('client disconnected');
+      // console.log('client disconnected');
       server.logOutClient(client);
     });
 
@@ -105,7 +106,7 @@ class LobbyServer {
         }
 
         if (!(chatToJoin in this.chats)) this.chats[chatToJoin] = [];
-        console.log(Object.keys(this.chats));
+        // console.log(Object.keys(this.chats));
 
         this.chats[chatToJoin].push(client);
 
@@ -129,11 +130,11 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
 
-        console.log('channel: ', channelName);
-        console.log('chatMsg: ', chatMsg);
-        console.log('channels:', Object.keys(this.chats));
+        // console.log('channel: ', channelName);
+        // console.log('chatMsg: ', chatMsg);
+        // console.log('channels:', Object.keys(this.chats));
 
-        console.log(channelName in this.chats);
+        // console.log(channelName in this.chats);
 
         if (channelName in this.chats) {
           for (const ppl of this.chats[channelName]) {
@@ -164,10 +165,10 @@ class LobbyServer {
         try {
           this.chats[chatToLeave]
               .splice(this.chats[chatToLeave].indexOf(client), 1);
-          console.log('LEAVING CHAT', chatToLeave);
+          // console.log('LEAVING CHAT', chatToLeave);
           // console.log(this.chats);
         } catch {
-          console.log('NU');
+          // console.log('NU');
         } // hackery going on
         // remove this user from the chat's list of users
         client.state.leaveChat(chatToLeave);
@@ -179,15 +180,18 @@ class LobbyServer {
       }
       case 'JOINGAME': { // join a game
         let battleToJoin;
+        const username=client.state.username;
         try {
           battleToJoin = message['parameters']['battleName'];
         } catch (e) {
           this.clientSendNotice(client, 'invalid battle name');
+          console.log(e);
         }
 
         try {
           this.rooms[battleToJoin].clients.push(client);
           this.rooms[battleToJoin].numofPpl += 1;
+          this.rooms[battleToJoin].team[username]='A';
         } catch {
           this.rooms[battleToJoin] = {
             'polls': {},
@@ -199,10 +203,11 @@ class LobbyServer {
             'mods': '',
             'password': '',
             'isStarted': false,
-            'team': {}, // {'A': ['xiaoming','xiaozhang'], 'B': ['zhangsan']}
+            'team': {}, // {'tom':A,'bob':'A','alice':'B','xiaoming':'B'}
             'responsibleAutohost': 0, // in the future this could be
             // returned by a load balancing function
           };
+          this.rooms[battleToJoin].team[username]='A';
         }
         client.state.joinRoom(battleToJoin);
         for (const ppl of this.rooms[battleToJoin].clients) {
@@ -242,7 +247,8 @@ class LobbyServer {
         try {
           battleToStart = message['parameters']['battleName'];
         } catch (e) {
-          this.clientSendNotice(client, 'error', 'invalid battle name');
+          // eslint-disable-next-line max-len
+          this.clientSendNotice(client, 'error', 'invalid battle name to start');
         }
 
         // add this cmd to the poll if it's not in the poll
@@ -255,7 +261,7 @@ class LobbyServer {
         if (this.rooms[battleToStart].polls[action].length >=
           Math.floor(this.rooms[battleToStart].numofPpl / 2) ||
           client.state.username ==
-          this.rooms[battleToStart].host.usrname) {
+          this.rooms[battleToStart].host.username) {
           try {
             this.rooms[battleToStart].isStarted = true;
             // clear pool
@@ -282,17 +288,14 @@ class LobbyServer {
       case 'SETTEAM': { // set team
         let battleToSetTeam;
         let team;
-        let playerName;
-        let player;
         try {
           battleToSetTeam = message['parameters']['battleName'];
           team = message['parameters']['team'];
-          // {'tom':A,'bob':'A','alice':'B','xiaoming':'B'}
-
-          playerName = message['parameters']['player'];
-          player = this.players[playerName];
+          // {'tom':'A','bob':'A','alice':'B','xiaoming':'B'}
         } catch (e) {
-          this.clientSendNotice(client, 'error', 'invalid battle name');
+          console.log(e);
+          // eslint-disable-next-line max-len
+          this.clientSendNotice(client, 'error', 'invalid battle name to set team');
         }
 
         // add this cmd to the poll if it's not in the poll
@@ -304,16 +307,36 @@ class LobbyServer {
         if (this.rooms[battleToSetTeam].polls[action].length >=
           Math.floor(this.rooms[battleToSetTeam].numofPpl / 2) ||
           client.state.username ==
-          this.rooms[battleToSetTeam].host.usrname) {
+          this.rooms[battleToSetTeam].host.username) {
           try {
             this.rooms[battleToSetTeam].polls[action] = [];
-            player.state.joinTeam(team[playerName]);
-            // client.state.joinTeam(team);
+            for (const ppl of this.rooms[battleToSetTeam].clients) {
+              // check if team[ppl.state.username] is undefined
+              if (team[ppl.state.username] == undefined) {
+                this.clientSendNotice(client,
+                    'info',
+                    'The requested team does not cover all players in the room');
+              }
+              ppl.state.joinTeam(team[ppl.state.username]);
+              // console.log(ppl.state);
+              // console.log(team[ppl.state.username]);
+            }
             this.rooms[battleToSetTeam].team=team; // overwrite
             // the memory with client submitted team
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
+
+          // eslint-disable-next-line guard-for-in
+          for (const existingPlayer in this.rooms[battleToSetTeam].clients) {
+            // eslint-disable-next-line max-len
+            this.rooms[battleToSetTeam].team[existingPlayer]=team[existingPlayer];
+            if (team[ppl.state.username] == undefined) {
+              this.clientSendNotice(client,
+                  'info',
+                  'The requested team does not cover all players in the room');
+            }
+          }
         } else {
           // this.stateDump(client, 'STARTGAME');
           this.clientSendNotice(client,
@@ -337,7 +360,8 @@ class LobbyServer {
           battleToSetMap = message['parameters']['battleName'];
           mapToSet = message['parameters']['map'];
         } catch (e) {
-          this.clientSendNotice(client, 'error', 'invalid battle name');
+          // eslint-disable-next-line max-len
+          this.clientSendNotice(client, 'error', 'invalid battle name to set map');
         }
 
         // add this cmd to the poll if it's not in the poll
@@ -350,7 +374,7 @@ class LobbyServer {
         if (this.rooms[battleToSetMap].polls[action].length >=
           Math.floor(this.rooms[battleToSetMap].numofPpl / 2) ||
           client.state.username ==
-          this.rooms[battleToSetMap].host.usrname) {
+          this.rooms[battleToSetMap].host.username) {
           try {
             this.rooms[battleToSetMap].map = mapToSet;
             this.rooms[battleToSetMap].polls[action] = [];
@@ -369,7 +393,7 @@ class LobbyServer {
         try {
           battleToStop = message['parameters']['battleName'];
         } catch (e) {
-          this.clientSendNotice(client, 'error', 'invalid battle name');
+          this.clientSendNotice(client, 'error', 'invalid battle name to exit');
         }
         // add this cmd to the poll if it's not in the poll
         if (!this.rooms[battleToStop].polls.hasOwnProperty(action)) {
@@ -381,7 +405,7 @@ class LobbyServer {
         if (
           this.rooms[battleToStop].polls[action].length >=
           Math.floor(this.rooms[battleToStop].numofPpl / 2) ||
-          client.state.username == this.rooms[battleToStop].host.usrname) {
+          client.state.username == this.rooms[battleToStop].host.username) {
           try {
             this.rooms[battleToStop].isStarted = false;
             this.rooms[battleToStop].polls[action] = [];

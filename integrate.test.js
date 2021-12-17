@@ -51,8 +51,7 @@ const setTeamJson = {
   action: 'SETTEAM',
   parameters: {
     battleName: 'testBattle',
-    team: 'A',
-    player: 'test',
+    team: {'tom': 'A', 'bob': 'A', 'alice': 'B', 'xiaoming': 'B', 'test': 'C'},
   },
 };
 

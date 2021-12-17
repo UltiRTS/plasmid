@@ -37,6 +37,7 @@ class ClientState {
 
   joinRoom(roomName) {
     this.room = roomName;
+    this.team = 'A';
   }
 
   leaveRoom() {
