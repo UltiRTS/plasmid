@@ -5,7 +5,7 @@ const WebSocket = ws.WebSocket;
 const registerJson = {
   action: 'REGISTER',
   parameters: {
-    usr: 'test',
+    usr: 'test4',
     passwd: 'testpassword',
   },
 };
