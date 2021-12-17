@@ -50,16 +50,18 @@ class database {
   register(credentials) {
     // eslint-disable-next-line max-len
     const passwdHash=this.hashPasswd(credentials['passwd']);
-    return this.knex.from('user').insert({
-      username: credentials['usr'],
-      password: passwdHash,
-      accessLevel: 0,
-    }).into('user').then(() => {
-      console.log('USER REGISTERED');
-      return true;
-    }).catch((e)=>{
-      console.log('ERROR: ', e);
-      return e;
+    return this.checkDup(credentials).then((ifDup)=>{
+      return this.knex.from('user').insert({
+        username: credentials['usr'],
+        password: passwdHash,
+        accessLevel: 0,
+      }).into('user').then(() => {
+        console.log('USER REGISTERED');
+        return [true, 0];
+      }).catch((e)=>{
+        console.log('ERROR: ', e);
+        return e;
+      });
     });
   }
 

@@ -46,20 +46,46 @@ class LobbyServer {
         server.processLoggedClient(client, message);
       } else if (message['action'] == 'REGISTER' &&
         server.checkRegClient(client, message)) {
-        global.database.register(message['parameters'])
-            .then(function(dbRet) {
-              if (dbRet) {
-                client.state = new ClientState('testToken', {
-                  username: message['parameters']['usr'],
-                  accLevel: dbRet[1],
-                });
-                client.connectivity = 10;
-                client.respondedKeepAlive = true;
-                client.keepAlive = server.processPing(client);
+        global.database.checkDup(message['parameters']).then((dup)=>{
+          if (dup) {
+            global.database.authenticate(message['parameters'])
+                .then(function(dbRet) {
+                  const isLoggedIn = dbRet[0];
 
-                server.stateDump(client, 'REGISTER');
-              }
-            });
+                  if (isLoggedIn) {
+                    client.state = new ClientState('testToken', {
+                      username: message['parameters']['usr'],
+                      accLevel: dbRet[1],
+                    });
+                    client.state.login();
+
+                    // console.log('client authenticated');
+                    client.connectivity = 10;
+                    client.respondedKeepAlive = true;
+                    client.keepAlive = server.processPing(client);
+
+                    server.players[client.state.username] = client;
+
+                    server.stateDump(client, 'LOGIN');
+                  }
+                });
+          } else {
+            global.database.register(message['parameters'])
+                .then(function(dbRet) {
+                  if (dbRet[0]) {
+                    client.state = new ClientState('testToken', {
+                      username: message['parameters']['usr'],
+                      accLevel: dbRet[1],
+                    });
+                    client.connectivity = 10;
+                    client.respondedKeepAlive = true;
+                    client.keepAlive = server.processPing(client);
+                    client.state.login();
+                    server.stateDump(client, 'REGISTER');
+                  }
+                });
+          }
+        });
       }
     });
 

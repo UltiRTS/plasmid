@@ -5,14 +5,12 @@ class ClientState {
   chats = [];
   room = '';
   team = '';
-  token = '';
   username = '';
 
-  constructor(_token, options={
+  constructor(options={
     username: '',
     accLevel: '',
   }) {
-    this.token = _token;
     this.username = options.username;
     this.accLevel = options.accLevel;
     this.loggedIn = true;
