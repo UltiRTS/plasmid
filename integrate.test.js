@@ -47,6 +47,15 @@ const joinBattleJson = {
   },
 };
 
+const setTeamJson = {
+  action: 'SETTEAM',
+  parameters: {
+    battleName: 'testBattle',
+    team: 'A',
+    player: 'test',
+  },
+};
+
 const socket = new WebSocket('ws://localhost:9090');
 socket.on('open', function open() {
   socket.send(JSON.stringify(registerJson));
@@ -72,6 +81,9 @@ socket.on('message', (message) => {
         break;
       case 'LEAVECHAT':
         socket.send(JSON.stringify(joinBattleJson));
+        break;
+      case 'JOINGAME':
+        socket.send(JSON.stringify(setTeamJson));
         break;
     }
   }

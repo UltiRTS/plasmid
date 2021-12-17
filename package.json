@@ -13,6 +13,7 @@
   },
   "scripts": {
     "lint": "eslint .  --ext .js",
-    "test": "mocha"
+    "test": "mocha",
+    "start": "node main.js"
   }
 }

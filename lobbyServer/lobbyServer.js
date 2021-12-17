@@ -9,6 +9,7 @@ const {clearInterval} = require('timers');
 class LobbyServer {
   chats = {};
   rooms = {};
+  players = {};
 
   constructor() {
     console.log('lobby server started!');
@@ -32,6 +33,8 @@ class LobbyServer {
                 client.connectivity = 10;
                 client.respondedKeepAlive = true;
                 client.keepAlive = server.processPing(client);
+
+                server.players[client.state.username] = client;
 
                 server.stateDump(client, 'LOGIN');
               }
@@ -254,8 +257,10 @@ class LobbyServer {
           this.rooms[battleToStart].host.usrname) {
           try {
             this.rooms[battleToStart].isStarted = true;
+            // clear pool
             this.rooms[battleToStart].polls[action] = [];
-            autohostClient.autohostMgrCreatRoom(this.rooms[battleToStart]);
+            // TODO: add autohostManager management
+            // autohostClient.autohostMgrCreatRoom(this.rooms[battleToStart]);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -274,10 +279,15 @@ class LobbyServer {
       }
 
       case 'SETTEAM': { // set team
-        let battleToSetTeam; let team;
+        let battleToSetTeam;
+        let team;
+        let playerName;
+        let player;
         try {
           battleToSetTeam = message['parameters']['battleName'];
           team = message['parameters']['team'];
+          playerName = message['parameters']['player'];
+          player = this.players[playerName];
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid battle name');
         }
@@ -288,14 +298,15 @@ class LobbyServer {
         }
         this.rooms[battleToSetTeam].polls[action].push(client);
 
-        // if the poll is 50% or more, start the game
         if (this.rooms[battleToSetTeam].polls[action].length >=
           Math.floor(this.rooms[battleToSetTeam].numofPpl / 2) ||
           client.state.username ==
           this.rooms[battleToSetTeam].host.usrname) {
           try {
             this.rooms[battleToSetTeam].polls[action] = [];
-            this.rooms[battleToSetTeam].team[team] =team;
+            player.state.joinTeam(team);
+            // client.state.joinTeam(team);
+            // this.rooms[battleToSetTeam].team[team] =team;
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -412,6 +423,8 @@ class LobbyServer {
     }));
   }
 
+  // must ensure that all references be deleted
+  // or there will be memory leaks
   logOutClient(client) { // server inited disconnect
     // remove client from all chats
     for (const chat of client.joinedChats) {
@@ -426,6 +439,8 @@ class LobbyServer {
     }
 
     clearInterval(client[token].keepAlive);
+
+    delete this.players[client.state.username];
   }
 
   // set an event listener for client disconnect
@@ -437,7 +452,6 @@ class LobbyServer {
     const games = this.getAllGames();
     // const games = this.rooms;
 
-    console.log('PPL STATE: ', ppl.state);
     // get all chats that have this user in them
     const chatMsg = ppl.chatMsg;
 
@@ -483,7 +497,7 @@ class LobbyServer {
   getAllPlayers(room) {
     const players = [];
     for (const client of room.clients) {
-      players.push(client.usrname);
+      players.push(client.state.username);
     }
     return players;
   }
