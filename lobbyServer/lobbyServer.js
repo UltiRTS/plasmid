@@ -41,6 +41,9 @@ class LobbyServer {
                 server.stateDump(client, 'LOGIN');
               }
             });
+      } else if (message['action'] == 'LOGIN' &&
+      !server.checkLoginClient(client, message)) {
+        client.terminate();
       } else if ('state' in client && client.state.loggedIn) {
         // console.log('processing messages');
         server.processLoggedClient(client, message);
@@ -86,6 +89,9 @@ class LobbyServer {
                 });
           }
         });
+      } else if (message['action'] == 'REGISTER' &&
+      !server.checkRegClient(client, message)) {
+        client.terminate();
       }
     });
 
@@ -109,6 +115,10 @@ class LobbyServer {
     //    if (isDupOK && isBanOK) {
     //      return true;
     //    }
+    return true;
+  }
+
+  checkLoginClient(client, message) {
     return true;
   }
 

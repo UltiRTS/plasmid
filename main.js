@@ -7,7 +7,7 @@ const Config=require('./dev.conf');
 // global.config=Config.config
 
 const Database= require('./libdatabase/libdatabase');
-global.database=new Database('sqlite');
+global.database=new Database(Config.db);
 
 const EventEmitter = require('events');
 global.eventEmitter = new EventEmitter();
