@@ -303,7 +303,7 @@ class LobbyServer {
             // clear pool
             this.rooms[battleToStart].polls[action] = [];
             // TODO: add autohostManager management
-            // autohostClient.autohostMgrCreatRoom(this.rooms[battleToStart]);
+            autohostServer.start(this.rooms[battleToStart]);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on

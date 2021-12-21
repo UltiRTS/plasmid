@@ -1,8 +1,8 @@
 const PlasmidLobbyServer = require('./lobbyServer/lobbyServer');
+const PlasmidGameServer = require('./autohostServer/autohostManager.js');
 
-// why?
 // eslint-disable-next-line no-unused-vars
-const Config=require('./dev.conf');
+const Config=require('./config.js').config;
 // console.log(Config)
 // global.config=Config.config
 
@@ -15,3 +15,5 @@ global.eventEmitter = new EventEmitter();
 
 /* START BUSINESS LOGIC*/
 lobbyServer=new PlasmidLobbyServer();
+autohostServer=new PlasmidGameServer(Config.autohosts);
+

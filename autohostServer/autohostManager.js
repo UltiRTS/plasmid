@@ -7,7 +7,6 @@ const {initAutohostServerNetwork} = require('../libnetwork/libautohostServerNetw
  * @description this class is for handling autohost client
  */
 class AutohostManager {
-  connectedAutohosts = [];
   /**
    *
    * @param {Array} availableServers
@@ -15,7 +14,7 @@ class AutohostManager {
   constructor(availableServers) {
     const server=this;
     initAutohostServerNetwork(availableServers);
-    connectedAutohosts= availableServers;
+    console.log(availableServers);
     eventEmitter.on('commandFromAutohost', function(client, message) {
       switch (message.action) {
         case 'sayChat':
@@ -35,7 +34,7 @@ class AutohostManager {
     });
   }
 
-  hostGame(roomObj) {
+  start(roomObj) {
     server.clients[loadBalance()].send(JSON.stringify(roomObj));
     return;
   }
