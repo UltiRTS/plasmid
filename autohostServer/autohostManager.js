@@ -29,16 +29,32 @@ class AutohostManager {
       }
     });
 
-    eventEmitter.on('connectionFreomAutohost', function(clients) {
+    eventEmitter.on('connectionFromAutohost', function(clients) {
       server.clients=clients;
+    });
+
+    eventEmitter.on('commandFromPlamid', (action, params) => {
+      switch (action) {
+        case 'CreateGame':
+          server.start(params);
+        default:
+          console.log('unknown action: ', action, '\twith params:', params);
+      }
     });
   }
 
+  /**
+   *
+   * @param {object} roomObj
+   */
   start(roomObj) {
     server.clients[loadBalance()].send(JSON.stringify(roomObj));
-    return;
   }
 
+  /**
+   * @description function determine which server should be used
+   * @return {Number}
+   */
   loadBalance() {
     return 0;
   }

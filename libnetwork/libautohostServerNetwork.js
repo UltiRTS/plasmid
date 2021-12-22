@@ -5,16 +5,18 @@ const WebSocketServer=ws.WebSocketServer;
 function initAutohostServerNetwork(permittedautohostIP) {
   const wss = new WebSocketServer({port: 8080});
   wss.on('connection', function connection(ws) {
-    if (permittedautohostIP.includes(ws.upgradeReq.connection.remoteAddress)) {
-      eventEmitter.emit('connectionFreomAutohost', wss.clients);
-      ws.on('message', function incoming(message) {
+    // buggy here commented out
+    // if (permittedautohostIP.includes(ws.upgradeReq.connection.remoteAddress)) {
+    eventEmitter.emit('connectionFromAutohost', wss.clients);
+    console.log('got connection');
+    ws.on('message', function incoming(message) {
       // eslint-disable-next-line max-len
-        eventEmitter.emit('commandFromAutohost', ws,
-            JSON.parse(message), wss.clients);
-      });
-    } else {
-      ws.terminate();
-    }
+      eventEmitter.emit('commandFromAutohost', ws,
+          JSON.parse(message), wss.clients);
+    });
+    // } else {
+    //   ws.terminate();
+    // }
 
     ws.on('close', function() {
       eventEmitter.emit('autohostDisconnected', ws);
