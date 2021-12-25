@@ -52,6 +52,7 @@ const setTeamJson = {
   parameters: {
     battleName: 'testBattle',
     team: {'tom': 'A', 'bob': 'A', 'alice': 'B', 'xiaoming': 'B', 'test': 'C'},
+    AIs: {'CircuitAI': 'A', 'CircuitAI': 'B', 'CircuitAI': 'C'},
   },
 };
 

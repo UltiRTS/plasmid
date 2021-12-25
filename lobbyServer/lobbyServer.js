@@ -240,6 +240,7 @@ class LobbyServer {
             'password': '',
             'isStarted': false,
             'team': {}, // {'tom':A,'bob':'A','alice':'B','xiaoming':'B'}
+            'AIs': {},
             'responsibleAutohost': 0, // in the future this could be
             // returned by a load balancing function
           };
@@ -324,10 +325,11 @@ class LobbyServer {
       case 'SETTEAM': { // set team
         let battleToSetTeam;
         let team;
+        let AIs;
         try {
           battleToSetTeam = message['parameters']['battleName'];
-          team = message['parameters']['team'];
-          // {'tom':'A','bob':'A','alice':'B','xiaoming':'B'}
+          team = message['parameters']['team']; // {'tom':'A','bob':'A','alice':'B','xiaoming':'B'}
+          AIs = message['parameters']['AIs'];
         } catch (e) {
           console.log(e);
           // eslint-disable-next-line max-len
@@ -346,37 +348,23 @@ class LobbyServer {
           this.rooms[battleToSetTeam].host.username) {
           try {
             this.rooms[battleToSetTeam].polls[action] = [];
-            for (const ppl of this.rooms[battleToSetTeam].clients) {
+            for (const ppl in this.rooms[battleToSetTeam].clients) { // GOING THROUGH A LIST OF REAL PLAYERS!!
               // check if team[ppl.state.username] is undefined
-              if (team[ppl.state.username] == undefined) {
+              if (team[this.rooms[battleToSetTeam].clients[ppl].state.username] == undefined) {
                 this.clientSendNotice(client,
                     'info',
                     'The requested team does not cover all players in the room');
               } else {
-                ppl.state.joinTeam(team[ppl.state.username]);
+                this.rooms[battleToSetTeam].clients[ppl].state.joinTeam(team[ppl.state.username]);
+                const username = this.rooms[battleToSetTeam].clients[ppl]; // write innate property
+                this.rooms[battleToSetTeam].team[username]=team[username]; // write room property
               }
-              // console.log(ppl.state);
-              // console.log(team[ppl.state.username]);
             }
-            this.rooms[battleToSetTeam].team=team; // overwrite
-            // the memory with client submitted team
+            this.rooms[battleToSetTeam].AIs=AIs;
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
-
-          // eslint-disable-next-line guard-for-in
-          for (const existingPlayer in this.rooms[battleToSetTeam].clients) {
-            // eslint-disable-next-line max-len
-            if (team[this.rooms[battleToSetTeam].clients[existingPlayer].state.username] == undefined) {
-              this.clientSendNotice(client,
-                  'info',
-                  'The requested team does not cover all players in the room');
-            } else {
-              this.rooms[battleToSetTeam].team[existingPlayer]=team[existingPlayer];
-            }
-          }
         } else {
-          // this.stateDump(client, 'STARTGAME');
           this.clientSendNotice(client,
               'error',
               'not enough players to set team');
