@@ -32,15 +32,6 @@ class AutohostManager {
     eventEmitter.on('connectionFromAutohost', function(clients) {
       server.clients=clients;
     });
-
-    eventEmitter.on('commandFromPlamid', (action, params) => {
-      switch (action) {
-        case 'CreateGame':
-          server.start(params);
-        default:
-          console.log('unknown action: ', action, '\twith params:', params);
-      }
-    });
   }
 
   /**
