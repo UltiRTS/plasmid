@@ -1,5 +1,5 @@
-const PlasmidLobbyServer = require('./lobbyServer/lobbyServer');
-const PlasmidGameServer = require('./autohostServer/autohostManager.js');
+const {LobbyServer} = require('./lobbyServer/lobbyServer');
+const {AutohostManager} = require('./autohostServer/autohostManager.js');
 
 // eslint-disable-next-line no-unused-vars
 const Config=require('./config.js').config;
@@ -14,6 +14,9 @@ global.eventEmitter = new EventEmitter();
 
 
 /* START BUSINESS LOGIC*/
-lobbyServer=new PlasmidLobbyServer();
-autohostServer=new PlasmidGameServer(Config.autohosts);
+
+// eslint-disable-next-line no-unused-vars
+const lobbyServer=new LobbyServer();
+// eslint-disable-next-line no-unused-vars
+const autohostServer=new AutohostManager(Config.autohosts);
 

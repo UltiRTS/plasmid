@@ -1,6 +1,8 @@
 /* eslint-disable require-jsdoc */
 // import { WebSocketServer } from 'ws';
 const ws=require('ws');
+
+// eslint-disable-next-line no-unused-vars
 const {config} = require('../config');
 const WebSocketServer=ws.WebSocketServer;
 function initLobbyServerNetwork() {

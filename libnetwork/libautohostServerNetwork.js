@@ -6,6 +6,7 @@ function initAutohostServerNetwork(permittedautohostIP) {
   const wss = new WebSocketServer({port: 8080});
   wss.on('connection', function connection(ws) {
     // buggy here commented out
+    // eslint-disable-next-line max-len
     // if (permittedautohostIP.includes(ws.upgradeReq.connection.remoteAddress)) {
     eventEmitter.emit('connectionFromAutohost', wss.clients);
     console.log('got connection');

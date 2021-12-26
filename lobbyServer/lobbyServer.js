@@ -24,7 +24,7 @@ class LobbyServer {
               const isLoggedIn = dbRet[0];
 
               if (isLoggedIn) {
-                client.state = new ClientState('testToken', {
+                client.state = new ClientState({
                   username: message['parameters']['usr'],
                   accLevel: dbRet[1],
                 });
@@ -55,7 +55,7 @@ class LobbyServer {
                   const isLoggedIn = dbRet[0];
 
                   if (isLoggedIn) {
-                    client.state = new ClientState('testToken', {
+                    client.state = new ClientState({
                       username: message['parameters']['usr'],
                       accLevel: dbRet[1],
                     });
@@ -566,4 +566,6 @@ class LobbyServer {
   }
 }
 
-module.exports = LobbyServer;
+module.exports = {
+  LobbyServer,
+};

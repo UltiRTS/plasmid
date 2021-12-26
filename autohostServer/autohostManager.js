@@ -13,7 +13,7 @@ class AutohostManager {
    * @param {Array} availableServers
    */
   constructor(availableServers) {
-    server=this;
+    const server=this;
     initAutohostServerNetwork(availableServers);
     console.log(availableServers);
     eventEmitter.on('commandFromAutohost', function(client, message) {
@@ -54,4 +54,6 @@ class AutohostManager {
 }
 
 
-module.exports = AutohostManager;
+module.exports = {
+  AutohostManager,
+};
