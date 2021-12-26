@@ -13,7 +13,7 @@ const registerJson = {
 const loginJson = {
   action: 'LOGIN',
   parameters: {
-    usr: 'test',
+    usr: 'test4',
     passwd: 'testpassword',
   },
 };

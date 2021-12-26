@@ -1,3 +1,4 @@
+/* eslint-disable require-jsdoc */
 
 // eslint-disable-next-line max-len
 const {initAutohostServerNetwork} = require('../libnetwork/libautohostServerNetwork');
@@ -12,7 +13,7 @@ class AutohostManager {
    * @param {Array} availableServers
    */
   constructor(availableServers) {
-    const server=this;
+    server=this;
     initAutohostServerNetwork(availableServers);
     console.log(availableServers);
     eventEmitter.on('commandFromAutohost', function(client, message) {
@@ -39,7 +40,8 @@ class AutohostManager {
    * @param {object} roomObj
    */
   start(roomObj) {
-    server.clients[loadBalance()].send(JSON.stringify(roomObj));
+    console.log(this.clients[0]);
+    this.clients[this.loadBalance()].send(JSON.stringify(roomObj));
   }
 
   /**
