@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 const {LobbyServer} = require('./lobbyServer/lobbyServer');
 const {AutohostManager} = require('./autohostServer/autohostManager.js');
 
@@ -15,8 +16,8 @@ global.eventEmitter = new EventEmitter();
 
 /* START BUSINESS LOGIC*/
 
-// eslint-disable-next-line no-unused-vars
-const lobbyServer=new LobbyServer();
-// eslint-disable-next-line no-unused-vars
-const autohostServer=new AutohostManager(Config.autohosts);
 
+// eslint-disable-next-line no-unused-vars
+autohostServer=new AutohostManager(Config.autohosts);
+// eslint-disable-next-line no-unused-vars
+lobbyServer=new LobbyServer();
