@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-const {ClientState} = require('../lobbyServer/clientState');
+const {ClientState} = require('../state/client');
 
 describe('ClientState', function() {
   describe('#constructor()', function() {
@@ -10,7 +10,7 @@ describe('ClientState', function() {
         accLevel: 'administrator',
       };
 
-      const state = new ClientState('token', options);
+      const state = new ClientState(options);
       assert.equal(state.username, options.username);
       assert.equal(state.accLevel, options.accLevel);
     });

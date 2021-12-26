@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-const {initLobbyServerNetwork} = require('../libnetwork/liblobbyServerNetwork');
+const {initLobbyServerNetwork} = require('./lib/lobbyServerNetwork');
 // const ClientState = require('./clientState').default;
-const {ClientState} = require('./clientState');
+const {ClientState} = require('./state/client');
 const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
 
