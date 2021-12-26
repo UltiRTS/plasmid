@@ -32,6 +32,7 @@ class AutohostManager {
 
     eventEmitter.on('connectionFromAutohost', function(clients) {
       server.clients=clients;
+      // console.log(server.clients[0]);
     });
   }
 
@@ -40,8 +41,9 @@ class AutohostManager {
    * @param {object} roomObj
    */
   start(roomObj) {
-    console.log(this.clients[0]);
-    this.clients[this.loadBalance()].send(JSON.stringify(roomObj));
+    // console.log(Array.from(this.clients)[0]);
+    const autohostNum=this.loadBalance();
+    Array.from(this.clients)[autohostNum].send(JSON.stringify(roomObj));
   }
 
   /**

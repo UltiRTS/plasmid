@@ -303,7 +303,7 @@ class LobbyServer {
             // clear pool
             this.rooms[battleToStart].polls[action] = [];
             // TODO: add autohostManager management
-            autohostServer.start(this.rooms[battleToStart]);
+            autohostServer.start(this.mgrStateDump(this.rooms[battleToStart]));
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -511,9 +511,11 @@ class LobbyServer {
     // cdump the poll as well if the person is in a game
     let poll = {};
     let team = {};
+    let AIs = {};
     if (ppl.state.room != '') {
       poll = this.getRoomPoll(ppl.state.room);
       team = this.rooms[ppl.state.room].team;
+      AIs = this.rooms[ppl.state.room].AIs;
     }
 
     const response = {
@@ -523,6 +525,7 @@ class LobbyServer {
       'chatmsg': chatMsg,
       'poll': poll,
       'team': team,
+      'AIs': AIs,
     };
 
     ppl.send(JSON.stringify({
@@ -530,6 +533,20 @@ class LobbyServer {
       triggeredBy,
       'paramaters': response,
     }));
+  }
+
+  // a reduced version of state dump that works with autuhostServer.start()
+  mgrStateDump(room) {
+    let team = {};
+    let AIs = {};
+    team = room.team;
+    AIs = room.AIs;
+    const response = {
+      'team': team,
+      'AIs': AIs,
+    };
+
+    return (response);
   }
 
   getAllGames() {
