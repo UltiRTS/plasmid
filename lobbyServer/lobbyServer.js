@@ -2,7 +2,6 @@
 /* eslint-disable require-jsdoc */
 const {initLobbyServerNetwork} = require('../libnetwork/liblobbyServerNetwork');
 // const ClientState = require('./clientState').default;
-
 const {ClientState} = require('./clientState');
 const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
@@ -304,7 +303,7 @@ class LobbyServer {
             // clear pool
             this.rooms[battleToStart].polls[action] = [];
             // TODO: add autohostManager management
-            eventEmitter.emit('CreateGame', this.rooms[battleToStart]);
+            autohostServer.startGame(parameters);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -448,7 +447,7 @@ class LobbyServer {
           this.stateDump(ppl, 'EXITGAME');
         }
 
-        autohostMgrKillEngine(this.rooms[battleToStop]);
+        autohostServer.killEngine(this.rooms[battleToStop]);
       }
     }
   }
