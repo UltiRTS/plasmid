@@ -203,9 +203,7 @@ class LobbyServer {
         // remove this user from the chat's list of users
         client.state.leaveChat(chatToLeave);
         this.stateDump(client, 'LEAVECHAT');
-        const playerList = this.rooms[battleToSetTeam].getPlayerList();
-        const playerListObj= this.usernames2ClientObj(playerList);
-        for (const ppl of playerListObj) {
+        for (const ppl of this.chats[chatToLeave]) {
           this.stateDump(ppl, 'LEAVECHAT');
         }
         break;
@@ -226,7 +224,7 @@ class LobbyServer {
           this.rooms[battleToJoin]=new RoomState(client.state.username, 'Comet Catcher Redux', Object.keys(this.rooms).length);
         }
         client.state.joinRoom(battleToJoin);
-        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerList = this.rooms[battleToJoin].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           // now let everyone else know
@@ -278,6 +276,9 @@ class LobbyServer {
           client.state.username ==
           this.rooms[battleToStart].getHoster()) {
           try {
+            const autohostNum=this.loadBalance();
+            this.rooms[battleToStart].setResponsibleAutohost(autohostNum);
+
             autohostServer.start(this.rooms[battleToStart].configureToStart());
           } catch (e) {
             console.log('NU', e);
@@ -290,7 +291,7 @@ class LobbyServer {
         }
 
 
-        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerList = this.rooms[battleToStart].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'STARTGAME');
@@ -322,7 +323,7 @@ class LobbyServer {
           try {
             this.rooms[battleToSetTeam].clearPoll();
 
-            const playerList = this.rooms[battleToSetTeam].getPlayerList();
+            const playerList = this.rooms[battleToSetTeam].getPlayers();
             for (const ppl in playerList) { // GOING THROUGH A LIST OF REAL PLAYERS!!
               // check if team[ppl.state.username] is undefined
               if (team[ppl] == undefined) {
@@ -335,7 +336,7 @@ class LobbyServer {
                 singleClientInRoom.state.setTeam(team[ppl]);
               }
             }
-            this.rooms[battleToSetTeam].setAIs(AIs);
+            this.rooms[battleToSetTeam].setAI(AIs);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -346,7 +347,7 @@ class LobbyServer {
         }
 
 
-        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerList = this.rooms[battleToSetTeam].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETTEAM');
@@ -455,9 +456,9 @@ class LobbyServer {
   usernames2ClientObj(usernames) {
     const clients = [];
     for (const username of usernames) {
-      for (const player of this.players) {
-        if (player.state.username == username) {
-          clients.push(client);
+      for (const recordedUsrname in this.players) {
+        if (this.players[recordedUsrname].state.username == username) {
+          clients.push(this.players[recordedUsrname]);
         }
       }
     }
@@ -529,14 +530,22 @@ class LobbyServer {
 
     // eslint-disable-next-line guard-for-in
     for (const battle in this.rooms) {
-      const players = this.rooms[battle].getPlayerList();
+      const players = this.rooms[battle].getPlayers();
       games.push({
         'battleName': this.rooms[battle].getTitle(),
-        'isStarted': this.rooms[battle].isStarted(),
+        'isStarted': this.rooms[battle].checkStarted(),
         'players': players,
       });
     }
     return games;
+  }
+
+  /**
+   * @description function determine which server should be used
+   * @return {Number}
+   */
+  loadBalance() {
+    return 0;
   }
 }
 

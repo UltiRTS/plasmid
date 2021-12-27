@@ -19,7 +19,7 @@ class RoomState {
   ID=0;
   password='';
   isStarted=false;
-  responsibleAutohost='';
+  responsibleAutohost=0;
 
   /**
    *
@@ -58,7 +58,7 @@ class RoomState {
    *
    * @return {bool} if room started
    */
-  isStarted() {
+  checkStarted() {
     return this.isStarted;
   }
 
@@ -93,7 +93,11 @@ class RoomState {
    *
    */
   getPlayers() {
-    return this.players;
+    const playerList=[];
+    for (const player of this.players) {
+      playerList.push(Object.keys(player)[0]);
+    }
+    return playerList;
   }
 
   // set responsible autohost
@@ -122,7 +126,7 @@ class RoomState {
     if (!this.polls.hasOwnProperty(actionName)) {
       this.polls[actionName] = new Set();
     }
-    this.polls[actionName].push(playerName);
+    this.polls[actionName].add(playerName);
   }
 
   // get poll count
@@ -144,7 +148,7 @@ class RoomState {
   getPolls() {
     const returningPoll={};
     // eslint-disable-next-line guard-for-in
-    for (poll in this.polls) {
+    for (const poll in this.polls) {
       returningPoll[poll]=this.polls[poll].size;
     }
     return returningPoll;
@@ -194,10 +198,26 @@ class RoomState {
    * @param {dict} team a dict of the AIs{Circuit1: 'A', Circuit2: 'B'}
    */
   setAI(team) {
-    for (const AI of team) {
+    for (const AI of this.AIs) {
       this.AIs.push({CircuitAI: AI});
     }
   }
+
+  // get AI dict
+
+  /**
+   * @return {dict} ai dict
+   */
+  getAI() {
+    const returningAI=[];
+    for (const AI of this.AIs) {
+      for (const AIname of AI) {
+        returningAI.push(AIname);
+      }
+    }
+    return returningAI;
+  }
+
   /**
    *
    * @param {String} team
@@ -232,7 +252,7 @@ class RoomState {
 
   /**
    *
-   * @return {dict} a dict of that player teams
+   * @return {dict} a dict of player teams
    */
   getPlayerTeam() {
     const returningDict={};
@@ -256,8 +276,12 @@ class RoomState {
   configureToStart() {
     this.isStarted=true;
     this.poll={};
+
     let count = 0;
+
     const engineLaunchObj = {};
+    engineLaunchObj['id']=this.ID;
+    engineLaunchObj['mgr']=this.responsibleAutohost;
     engineLaunchObj['map'] = this.map;
 
     for (const player of this.players) {

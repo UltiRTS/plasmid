@@ -15,7 +15,8 @@ describe('RoomStateIntegrity', () => {
       roomState.addSpectator('spec1');
       roomState.setMap('somemap');
 
-      const engineLaunchObj = roomState.enginize();
+      // the following code is out of date!
+      const engineLaunchObj = roomState.configureToStart();
       assert.equal(String(engineLaunchObj),
           String({
             map: 'somemap',
