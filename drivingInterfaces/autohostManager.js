@@ -1,7 +1,7 @@
 /* eslint-disable require-jsdoc */
 
 // eslint-disable-next-line max-len
-const {initAutohostServerNetwork} = require('./autohostServerNetwork');
+const {initAutohostServerNetwork} = require('../lib/autohostServerNetwork');
 
 /**
  * @class AutohostManger

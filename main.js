@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
-const {LobbyServer} = require('./lobbyServer');
-const {AutohostManager} = require('./lib/autohostManager.js');
+const {LobbyServer} = require('./drivingInterfaces/lobbyServer');
+const {AutohostManager} = require('./drivingInterfaces/autohostManager.js');
 
 // eslint-disable-next-line no-unused-vars
 const Config=require('./config.js').config;
