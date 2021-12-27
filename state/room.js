@@ -4,6 +4,7 @@
  * @description for managing room
  */
 class RoomState {
+  tile='';
   hoster = '';
   map = 'somemap';
   // format [{'CircuitAI': 'A'}, ...]
@@ -14,13 +15,51 @@ class RoomState {
   players = [];
   // format ['spectator1', ...]
   spectators = [];
+  polls = {};
+  ID=0;
+  password='';
+  isStarted=false;
+  responsibleAutohost='';
+
   /**
    *
    * @param {String} hoster room hoster
+   * @param {String} map map name
+   * @param {int} ID id for room
+   * @param {String} password password for room
    */
-  constructor(hoster='default') {
+  constructor(hoster='default', map='Comet Catcher Redux', ID=0, password='') {
     this.hoster = hoster;
     this.players.push({[hoster]: 'A'});
+    this.map=map;
+  }
+
+  // set room title
+
+  /**
+   *
+   * @param {String} roomName the name of the room
+   */
+  setRoomName(roomName) {
+    this.title = roomName;
+  }
+
+  // get room title
+
+  /**
+   *
+   * @return {String} title of the room
+   */
+  getTitle() {
+    return this.title;
+  }
+
+  /**
+   *
+   * @return {bool} if room started
+   */
+  isStarted() {
+    return this.isStarted;
   }
 
   /**
@@ -28,18 +67,137 @@ class RoomState {
    * @param {String} playerName
    * @param {String} team
    */
-  addPlayer(playerName, team) {
-    this.players.push({[playerName]: team});
+  setPlayer(playerName, team) {
+    // check if the player is already in the room
+    if (this.isPlayerInRoom(playerName)) {
+      // if the player is in the room, set the team
+      // eslint-disable-next-line max-len
+      this.players.find((player) => player[playerName] === team)[playerName] = team;
+    } else {
+      this.players.push({[playerName]: team});
+    }
+  }
+
+  // check if the player is already in the room
+  /**
+   * @param {String} playerName
+   * @return {boolean} true if the player is already in the room
+   */
+  isPlayerInRoom(playerName) {
+    return this.players.some((player) => Object.keys(player)[0] === playerName);
+  }
+
+  // get player list
+  /**
+   * @return {Array} list of players
+   *
+   */
+  getPlayers() {
+    return this.players;
+  }
+
+  // set responsible autohost
+  /**
+   * @param {int} id of the autohost in the config
+   */
+  setResponsibleAutohost(id) {
+    this.responsibleAutohost = id;
+  }
+
+  // get responsible autohost
+  /**
+   *
+   * @return {int} id of the autohost in the config
+   */
+  getResponsibleAutohost() {
+    return this.responsibleAutohost;
   }
 
   /**
    *
-   * @param {String} team
+   * @param {String} playerName name of player
+   * @param {String} actionName name of the poll
    */
-  addAI(team) {
-    this.AIs.push({CircuitAI: team});
+  addPoll(playerName, actionName) {
+    if (!this.polls.hasOwnProperty(actionName)) {
+      this.polls[actionName] = new Set();
+    }
+    this.polls[actionName].push(playerName);
   }
 
+  // get poll count
+  /**
+   * @return {int} number of polls
+   * @param {String} actionName
+   */
+  getPollCount(actionName) {
+    if (!this.polls.hasOwnProperty(actionName)) {
+      return 0;
+    }
+    return this.polls[actionName].size;
+  }
+
+  // return a dict with the name of the polls and the number of players
+  /**
+   * @return {dict} dict of the polls and the number of players
+   */
+  getPolls() {
+    const returningPoll={};
+    // eslint-disable-next-line guard-for-in
+    for (poll in this.polls) {
+      returningPoll[poll]=this.polls[poll].size;
+    }
+    return returningPoll;
+  }
+
+  // clear poll
+  /**
+   * @param {String} actionName clears the player names under this action
+   */
+  clearPoll(actionName) {
+    if (this.polls.hasOwnProperty(actionName)) {
+      this.polls[actionName].clear();
+    }
+  }
+
+  // remove player
+  /**
+   *
+   * @param {String} playerName to be removed
+   */
+  removePlayer(playerName) {
+    // eslint-disable-next-line max-len
+    const targetIndex = this.players.findIndex((player) => playerName in player);
+    if (targetIndex !== undefined) this.players.splice(targetIndex, 1);
+  }
+
+  /**
+   *
+   * @param {String} passwd
+   */
+  setPasswd(passwd) {
+    this.password=passwd;
+  }
+
+  // get hoster
+  /**
+ *
+ * @return {string} host username.
+ */
+  getHoster() {
+    return this.hoster;
+  }
+
+
+  /**
+   *
+   * @param {dict} team a dict of the AIs{Circuit1: 'A', Circuit2: 'B'}
+   */
+  setAI(team) {
+    for (const AI of team) {
+      this.AIs.push({CircuitAI: AI});
+    }
+  }
   /**
    *
    * @param {String} team
@@ -64,10 +222,40 @@ class RoomState {
     this.map = mapName;
   }
 
+  // get number of players
+  /**
+   * @return {int} number of players
+   */
+  getPlayerCount() {
+    return this.players.length;
+  }
+
+  /**
+   *
+   * @return {dict} a dict of that player teams
+   */
+  getPlayerTeam() {
+    const returningDict={};
+    for (const player of this.players) {
+      returningDict[Object.keys(player)[0]]=Object.values(player)[0];
+    }
+    return returningDict;
+  }
+
+  /**
+   * sets the room to stop
+   */
+  configureToStop() {
+    this.isStarted=false;
+    this.poll={};
+  }
+
   /**
    * @return {Object} for engine launch
    */
-  enginize() {
+  configureToStart() {
+    this.isStarted=true;
+    this.poll={};
     let count = 0;
     const engineLaunchObj = {};
     engineLaunchObj['map'] = this.map;

@@ -3,14 +3,15 @@
 const {initLobbyServerNetwork} = require('./lib/lobbyServerNetwork');
 // const ClientState = require('./clientState').default;
 const {ClientState} = require('./state/client');
+const {RoomState} = require('./state/room');
+
 const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
   chats = {};
   rooms = {};
-  players = {}; // holds all connected clients; this is
-  // different from rooms['battlename'].clients!!
+  players = {}; // holds all connected clients;
 
   constructor() {
     console.log('lobby server started!');
@@ -165,12 +166,6 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
 
-        // console.log('channel: ', channelName);
-        // console.log('chatMsg: ', chatMsg);
-        // console.log('channels:', Object.keys(this.chats));
-
-        // console.log(channelName in this.chats);
-
         if (channelName in this.chats) {
           for (const ppl of this.chats[channelName]) {
             // now let everyone else know
@@ -208,7 +203,9 @@ class LobbyServer {
         // remove this user from the chat's list of users
         client.state.leaveChat(chatToLeave);
         this.stateDump(client, 'LEAVECHAT');
-        for (const ppl of this.chats[chatToLeave]) {
+        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
           this.stateDump(ppl, 'LEAVECHAT');
         }
         break;
@@ -224,29 +221,14 @@ class LobbyServer {
         }
 
         try {
-          this.rooms[battleToJoin].clients.push(client);
-          this.rooms[battleToJoin].numofPpl += 1;
-          this.rooms[battleToJoin].team[username]='A';
+          this.rooms[battleToJoin].setPlayer(username, 'A');
         } catch {
-          this.rooms[battleToJoin] = {
-            'polls': {},
-            'numofPpl': 1,
-            'host': client,
-            'clients': [client],
-            'ID': Object.keys(this.rooms).length,
-            'map': '',
-            'mods': '',
-            'password': '',
-            'isStarted': false,
-            'team': {}, // {'tom':A,'bob':'A','alice':'B','xiaoming':'B'}
-            'AIs': {},
-            'responsibleAutohost': 0, // in the future this could be
-            // returned by a load balancing function
-          };
-          this.rooms[battleToJoin].team[username]='A';
+          this.rooms[battleToJoin]=new RoomState(client.state.username, 'Comet Catcher Redux', Object.keys(this.rooms).length);
         }
         client.state.joinRoom(battleToJoin);
-        for (const ppl of this.rooms[battleToJoin].clients) {
+        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
           // now let everyone else know
           this.stateDump(ppl, 'JOINGAME');
         }
@@ -258,20 +240,20 @@ class LobbyServer {
         try {
           battleToLeave = message['parameters']['battleName'];
         } catch (e) {
-          this.stateDump(client, 'LEAVEGAME');
+          this.clientSendNotice(client, 'error', 'leave game request incomplete');
         }
 
         try {
-          this.rooms[battleToLeave].clients
-              .splice(this.rooms[battleToLeave].clients.indexOf(client), 1);
-          this.rooms[battleToLeave].numofPpl--;
+          this.rooms[battleToLeave].removePlayer(client.state.username);
         } catch (e) {
-          this.clientSendNotice(client, 'error', 'something went wrong');
+          this.clientSendNotice(client, 'error', 'leave game request unfulfilled');
           console.log(e);
           return;
         } // hackery going on
         client.state.leaveRoom(battleToLeave);
-        for (const ppl of this.rooms[battleToLeave].clients) {
+        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
           this.stateDump(ppl, 'LEAVEGAME');
         }
       }
@@ -288,22 +270,15 @@ class LobbyServer {
         }
 
         // add this cmd to the poll if it's not in the poll
-        if (!this.rooms[battleToStart].polls.hasOwnProperty(action)) {
-          this.rooms[battleToStart].polls[action] = [];
-        }
-        this.rooms[battleToStart].polls[action].push(client);
+        this.rooms[battleToStart].addPoll(client.state.username, action);
 
         // if the poll is 50% or more, start the game
-        if (this.rooms[battleToStart].polls[action].length >=
-          Math.floor(this.rooms[battleToStart].numofPpl / 2) ||
+        if (this.rooms[battleToStart].getPollCount(action) >=
+        this.rooms[battleToStart].getPlayerCount() ||
           client.state.username ==
-          this.rooms[battleToStart].host.username) {
+          this.rooms[battleToStart].getHoster()) {
           try {
-            this.rooms[battleToStart].isStarted = true;
-            // clear pool
-            this.rooms[battleToStart].polls[action] = [];
-            // TODO: add autohostManager management
-            autohostServer.start(this.mgrStateDump(this.rooms[battleToStart]));
+            autohostServer.start(this.rooms[battleToStart].configureToStart());
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -315,7 +290,9 @@ class LobbyServer {
         }
 
 
-        for (const ppl of this.rooms[battleToStart].clients) {
+        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
           this.stateDump(ppl, 'STARTGAME');
         }
         break;
@@ -336,30 +313,29 @@ class LobbyServer {
         }
 
         // add this cmd to the poll if it's not in the poll
-        if (!this.rooms[battleToSetTeam].polls.hasOwnProperty(action)) {
-          this.rooms[battleToSetTeam].polls[action] = [];
-        }
-        this.rooms[battleToSetTeam].polls[action].push(client);
+        this.rooms[battleToSetTeam].addPoll(client.state.username, action);
 
-        if (this.rooms[battleToSetTeam].polls[action].length >=
-          Math.floor(this.rooms[battleToSetTeam].numofPpl / 2) ||
-          client.state.username ==
-          this.rooms[battleToSetTeam].host.username) {
+        if (this.rooms[battleToSetTeam].getPollCount(action) >=
+        this.rooms[battleToSetTeam].getPlayerCount() ||
+        client.state.username ==
+        this.rooms[battleToSetTeam].getHoster()) {
           try {
-            this.rooms[battleToSetTeam].polls[action] = [];
-            for (const ppl in this.rooms[battleToSetTeam].clients) { // GOING THROUGH A LIST OF REAL PLAYERS!!
+            this.rooms[battleToSetTeam].clearPoll();
+
+            const playerList = this.rooms[battleToSetTeam].getPlayerList();
+            for (const ppl in playerList) { // GOING THROUGH A LIST OF REAL PLAYERS!!
               // check if team[ppl.state.username] is undefined
-              if (team[this.rooms[battleToSetTeam].clients[ppl].state.username] == undefined) {
+              if (team[ppl] == undefined) {
                 this.clientSendNotice(client,
                     'info',
                     'The requested team does not cover all players in the room');
               } else {
-                this.rooms[battleToSetTeam].clients[ppl].state.joinTeam(team[ppl.state.username]);
-                const username = this.rooms[battleToSetTeam].clients[ppl]; // write innate property
-                this.rooms[battleToSetTeam].team[username]=team[username]; // write room property
+                this.rooms[battleToSetTeam].setPlayer(ppl, team[ppl]);
+                const singleClientInRoom = this.usernames2ClientObj([ppl])[0];
+                singleClientInRoom.state.setTeam(team[ppl]);
               }
             }
-            this.rooms[battleToSetTeam].AIs=AIs;
+            this.rooms[battleToSetTeam].setAIs(AIs);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -370,7 +346,9 @@ class LobbyServer {
         }
 
 
-        for (const ppl of this.rooms[battleToSetTeam].clients) {
+        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETTEAM');
         }
 
@@ -390,25 +368,24 @@ class LobbyServer {
         }
 
         // add this cmd to the poll if it's not in the poll
-        if (!this.rooms[battleToSetMap].polls.hasOwnProperty(action)) {
-          this.rooms[battleToSetMap].polls[action] = [];
-        }
-        this.rooms[battleToSetMap].polls[action].push(client);
+        this.rooms[battleToSetMap].addPoll(client.state.username, action);
 
         // if the poll is 50% or more, start the game
-        if (this.rooms[battleToSetMap].polls[action].length >=
-          Math.floor(this.rooms[battleToSetMap].numofPpl / 2) ||
-          client.state.username ==
-          this.rooms[battleToSetMap].host.username) {
+        if (this.rooms[battleToSetMap].getPollCount(action) >=
+        this.rooms[battleToSetMap].getPlayerCount() ||
+        client.state.username ==
+        this.rooms[battleToSetMap].getHoster()) {
           try {
-            this.rooms[battleToSetMap].map = mapToSet;
-            this.rooms[battleToSetMap].polls[action] = [];
+            this.rooms[battleToSetMap].clearPoll();
+            this.rooms[battleToSetMap].setMap(mapToSet);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
         }
 
-        for (const ppl of this.rooms[battleToSetMap].clients) {
+        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETMAP');
         }
         break;
@@ -421,19 +398,18 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid battle name to exit');
         }
         // add this cmd to the poll if it's not in the poll
-        if (!this.rooms[battleToStop].polls.hasOwnProperty(action)) {
-          this.rooms[battleToStop].polls[action] = [];
-        }
-        this.rooms[battleToStop].polls[action].push(client);
+        this.rooms[battleToStop].addPoll(client.state.username, action);
+
 
         // if the poll is 50% or more, exit the game
-        if (
-          this.rooms[battleToStop].polls[action].length >=
-          Math.floor(this.rooms[battleToStop].numofPpl / 2) ||
-          client.state.username == this.rooms[battleToStop].host.username) {
+        if (this.rooms[battleToStop].getPollCount(action) >=
+        this.rooms[battleToStop].getPlayerCount() ||
+        client.state.username ==
+        this.rooms[battleToStop].getHoster()) {
           try {
-            this.rooms[battleToStop].isStarted = false;
-            this.rooms[battleToStop].polls[action] = [];
+            this.rooms[battleToStop].clearPoll();
+            this.rooms[battleToStop].configureToStop();
+            autohostServer.killEngine(this.rooms[battleToStop]);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -443,11 +419,11 @@ class LobbyServer {
               'not enough players to stop game');
         }
 
-        for (const ppl of this.rooms[battleToStop].clients) {
+        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
           this.stateDump(ppl, 'EXITGAME');
         }
-
-        autohostServer.killEngine(this.rooms[battleToStop]);
       }
     }
   }
@@ -474,6 +450,18 @@ class LobbyServer {
     client.send(JSON.stringify({
       'action': 'NOTICE', 'parameters': {'type': type, 'msg': msg},
     }));
+  }
+
+  usernames2ClientObj(usernames) {
+    const clients = [];
+    for (const username of usernames) {
+      for (const player of this.players) {
+        if (player.state.username == username) {
+          clients.push(client);
+        }
+      }
+    }
+    return clients;
   }
 
   // must ensure that all references be deleted
@@ -508,14 +496,14 @@ class LobbyServer {
     // get all chats that have this user in them
     const chatMsg = ppl.chatMsg;
 
-    // cdump the poll as well if the person is in a game
+    // dump the poll as well if the person is in a game
     let poll = {};
     let team = {};
     let AIs = {};
     if (ppl.state.room != '') {
-      poll = this.getRoomPoll(ppl.state.room);
-      team = this.rooms[ppl.state.room].team;
-      AIs = this.rooms[ppl.state.room].AIs;
+      poll = this.rooms[ppl.state.room].getPolls();
+      team = this.rooms[ppl.state.room].getPlayerTeam();
+      AIs = this.rooms[ppl.state.room].getAI();
     }
 
     const response = {
@@ -535,51 +523,20 @@ class LobbyServer {
     }));
   }
 
-  // a reduced version of state dump that works with autuhostServer.start()
-  mgrStateDump(room) {
-    let team = {};
-    let AIs = {};
-    team = room.team;
-    AIs = room.AIs;
-    const response = {
-      'team': team,
-      'AIs': AIs,
-    };
-
-    return (response);
-  }
 
   getAllGames() {
     const games = [];
 
     // eslint-disable-next-line guard-for-in
     for (const battle in this.rooms) {
-      const players = this.getAllPlayers(this.rooms[battle]);
+      const players = this.rooms[battle].getPlayerList();
       games.push({
-        'battleName': battle,
-        'isStarted': this.rooms[battle].isStarted,
+        'battleName': this.rooms[battle].getTitle(),
+        'isStarted': this.rooms[battle].isStarted(),
         'players': players,
       });
     }
     return games;
-  }
-
-  getAllPlayers(room) {
-    const players = [];
-    for (const client of room.clients) {
-      players.push(client.state.username);
-    }
-    return players;
-  }
-
-  getRoomPoll(battle) {
-    const poll = {};
-    // eslint-disable-next-line guard-for-in
-    for (const action in this.rooms[battle].polls) {
-      poll[action] =
-        this.rooms[battle].polls[action].length / this.rooms[battle].numofPpl;
-    }
-    return poll;
   }
 }
 
