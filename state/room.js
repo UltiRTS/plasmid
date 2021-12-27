@@ -283,13 +283,13 @@ class RoomState {
     engineLaunchObj['id']=this.ID;
     engineLaunchObj['mgr']=this.responsibleAutohost;
     engineLaunchObj['map'] = this.map;
-
+    engineLaunchObj['team']={};
     for (const player of this.players) {
       const playerName = Object.keys(player)[0];
       if (playerName === 'CircuitAI' || playerName === 'Chicken') continue;
 
       const playerId = playerName + count;
-      engineLaunchObj[playerId] = {
+      engineLaunchObj.team[playerId] = {
         index: count,
         isAI: false,
         isChicken: false,
@@ -305,7 +305,7 @@ class RoomState {
       if (AIName !== 'CircuitAI') continue;
 
       const AIId = AIName + count;
-      engineLaunchObj[AIId] = {
+      engineLaunchObj.team[AIId] = {
         index: count,
         isAI: false,
         isChicken: false,
@@ -321,7 +321,7 @@ class RoomState {
       if (ChickenName !== 'Chicken') continue;
 
       const ChickenId = ChickenName + count;
-      engineLaunchObj[ChickenId] = {
+      engineLaunchObj.team[ChickenId] = {
         index: count,
         isAI: false,
         isChicken: false,
@@ -334,7 +334,7 @@ class RoomState {
 
     for (const spectator of this.spectators) {
       const spectatorId = spectator + count;
-      engineLaunchObj[spectatorId] = {
+      engineLaunchObj.team[spectatorId] = {
         index: count,
         isAI: false,
         isChicken: false,
