@@ -21,26 +21,7 @@ class LobbyServer {
       if (message['action'] == 'LOGIN') {
         // console.log(client)
         global.database.authenticate(message['parameters'])
-            .then(function(dbRet) {
-              const isLoggedIn = dbRet[0];
-
-              if (isLoggedIn) {
-                client.state = new ClientState({
-                  username: message['parameters']['usr'],
-                  accLevel: dbRet[1],
-                });
-                client.state.login();
-
-                // console.log('client authenticated');
-                client.connectivity = 10;
-                client.respondedKeepAlive = true;
-                client.keepAlive = server.processPing(client);
-
-                server.players[client.state.username] = client;
-
-                server.stateDump(client, 'LOGIN');
-              }
-            });
+            .then(loginClient(dbRet));
       } else if (message['action'] == 'LOGIN' &&
       !server.checkLoginClient(client, message)) {
         client.terminate();
@@ -52,26 +33,7 @@ class LobbyServer {
         global.database.checkDup(message['parameters']).then((dup)=>{
           if (dup) {
             global.database.authenticate(message['parameters'])
-                .then(function(dbRet) {
-                  const isLoggedIn = dbRet[0];
-
-                  if (isLoggedIn) {
-                    client.state = new ClientState({
-                      username: message['parameters']['usr'],
-                      accLevel: dbRet[1],
-                    });
-                    client.state.login();
-
-                    // console.log('client authenticated');
-                    client.connectivity = 10;
-                    client.respondedKeepAlive = true;
-                    client.keepAlive = server.processPing(client);
-
-                    server.players[client.state.username] = client;
-
-                    server.stateDump(client, 'LOGIN');
-                  }
-                });
+                .then(loginClient(dbRet));
           } else {
             global.database.register(message['parameters'])
                 .then(function(dbRet) {
@@ -103,6 +65,27 @@ class LobbyServer {
     eventEmitter.on('commandFromAutohost', function() {
       // do something with autohost incoming interface msg
     });
+
+    function loginClient(dbRet) {
+      const isLoggedIn = dbRet[0];
+
+      if (isLoggedIn) {
+        client.state = new ClientState({
+          username: message['parameters']['usr'],
+          accLevel: dbRet[1],
+        });
+        client.state.login();
+
+        // console.log('client authenticated');
+        client.connectivity = 10;
+        client.respondedKeepAlive = true;
+        client.keepAlive = server.processPing(client);
+
+        server.players[client.state.username] = client;
+
+        server.stateDump(client, 'LOGIN');
+      }
+    }
   }
 
   checkRegClient(client, message) {
@@ -131,8 +114,6 @@ class LobbyServer {
       case 'PONG': {
         client.respondedKeepAlive = true;
       }
-
-
       case 'JOINCHAT': {
         let chatToJoin;
         try {
@@ -255,9 +236,76 @@ class LobbyServer {
           this.stateDump(ppl, 'LEAVEGAME');
         }
       }
+      case 'ADDFREUND': {
+        let freundtoadd;
+        let username;
+        try {
+          freundtoadd = message['parameters']['freund'];
+          username = client.state.username;
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'invalid freund');
+        } // hackery going on
+
+        // get the userID of the freund
+        global.database.getUserID(freundtoadd).then((userID) => {
+          global.database.writeNotification(userID, 0, confirmationType=
+            'freundConfirmation', username+' has requested to be your freund.',
+          {'requestingUser': username}).then(() => {
+            this.stateDump(client, 'ADDFREUND');
+          });
+        });
+        break;
+      }
+
+      case 'CONFIRMSYSMSG': {
+        let idtoconfirm;
+        let requesterusrname;
+        let AcceptNum;
+        try {
+          idtoconfirm = message['parameters']['id'];
+          AcceptNum = message['parameters']['AcceptNum'];
+          requesterusrname = client.states.username;
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'invalid confirmation');
+        }
+        global.database.getUserID(requesterusrname).then((userID) => {
+          global.database.checkSysMsgStatus(idtoconfirm, usrID).then((msgStatus)=>{
+            if (msgStatus == '0') {
+              global.database.confirmSysMsg(idtoconfirm, userID, AcceptNum).then((confirmDict) => {
+                if (AcceptNum == -1) {
+                  return;
+                }
+                switch (confirmDict['cofirmationType']) {
+                  case 'freundConfirmation': {
+                    global.database.insertFreund(requesterusrname, confirmDict['requestingUser'])
+                        .then((frdList) => {
+                          client.overwriteFreund(frdList);
+                          this.stateDump(client, 'CONFIRMSYSMSG');
+                        });
+
+                    global.database.insertFreund(confirmDict['requestingUser'], requesterusrname).then(() => {
+                      const anotherParty = this.usernames2ClientObj([confirmDict['requestingUser']]);
+                      this.stateDump(anotherParty, 'CONFIRMSYSMSG');
+                    });
+                    break;
+                  }
+                }
+              });
+            }
+
+            if (msgStatus == '1') {
+              this.clientSendNotice(client, 'error', 'message already confirmed');
+            }
+
+            if (msgStatus == '-1') {
+              this.clientSendNotice(client, 'error', 'You already declined!');
+            }
+          });
+        });
+        break;
+      }
 
       /* room related cmds, might require poll!*/
-
       case 'STARTGAME': { // set isStarted to true and let everyone else know
         let battleToStart;
         try {
@@ -298,7 +346,6 @@ class LobbyServer {
         }
         break;
       }
-
       case 'SETTEAM': { // set team
         let battleToSetTeam;
         let team;
@@ -355,8 +402,6 @@ class LobbyServer {
 
         break;
       }
-
-
       case 'SETMAP': { // set the map
         let battleToSetMap;
         let mapToSet;
@@ -494,34 +539,36 @@ class LobbyServer {
     const games = this.getAllGames();
     // const games = this.rooms;
 
-    // get all chats that have this user in them
-    const chatMsg = ppl.chatMsg;
 
     // dump the poll as well if the person is in a game
     let poll = {};
     let team = {};
     let AIs = {};
+
     if (ppl.state.room != '') {
       poll = this.rooms[ppl.state.room].getPolls();
       team = this.rooms[ppl.state.room].getPlayerTeam();
       AIs = this.rooms[ppl.state.room].getAI();
     }
 
-    const response = {
-      'usrstats': ppl.state.getState(),
-      'games': games,
-      'chats': Object.keys(this.chats),
-      'chatmsg': chatMsg,
-      'poll': poll,
-      'team': team,
-      'AIs': AIs,
-    };
+    global.database.getAllNotifications(ppl.state.userID).then((notifications) => {
+      const response = {
+        'usrstats': ppl.state.getState(),
+        'games': games,
+        'chats': Object.keys(this.chats),
+        'chatmsg': chatMsg,
+        'poll': poll,
+        'team': team,
+        'AIs': AIs,
+        'notifications': notifications,
+      };
 
-    ppl.send(JSON.stringify({
-      'action': 'stateDump',
-      triggeredBy,
-      'paramaters': response,
-    }));
+      ppl.send(JSON.stringify({
+        'action': 'stateDump',
+        triggeredBy,
+        'paramaters': response,
+      }));
+    });
   }
 
 

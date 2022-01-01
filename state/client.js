@@ -6,6 +6,9 @@ class ClientState {
   room = '';
   team = '';
   username = '';
+  freunds={};
+  chatMsg = '';
+  userID='';
 
   constructor(options={
     username: '',
@@ -18,6 +21,10 @@ class ClientState {
 
   login() {
     this.loggedIn = true;
+  }
+
+  writeUserID(id) {
+    this.userID=id;
   }
 
   logout() {
@@ -60,8 +67,22 @@ class ClientState {
       room: this.room,
       team: this.team,
       token: this.token,
+      fruneds: this.freunds,
+      chatMsg: this.chatMsg,
       username: this.username,
     };
+  }
+
+  overwriteFreund(friendList) {
+    this.freunds=friendList;
+  }
+
+  writeChatMsg(msg) {
+    this.chatMsg = msg;
+  }
+
+  getChatMsg() {
+    return this.chatMsg;
   }
 }
 
