@@ -7,7 +7,7 @@ class ClientState {
   team = '';
   username = '';
   freunds={};
-  chatMsg = '';
+  chatMsg = {};
   userID='';
 
   constructor(options={
@@ -79,10 +79,6 @@ class ClientState {
 
   writeChatMsg(msg) {
     this.chatMsg = msg;
-  }
-
-  getChatMsg() {
-    return this.chatMsg;
   }
 }
 
