@@ -21,7 +21,7 @@ class LobbyServer {
       if (message['action'] == 'LOGIN') {
         // console.log(client)
         global.database.authenticate(message['parameters'])
-            .then(loginClient(dbRet));
+            .then((dbRet)=>loginClient(dbRet));
       } else if (message['action'] == 'LOGIN' &&
       !server.checkLoginClient(client, message)) {
         client.terminate();
@@ -33,7 +33,7 @@ class LobbyServer {
         global.database.checkDup(message['parameters']).then((dup)=>{
           if (dup) {
             global.database.authenticate(message['parameters'])
-                .then(loginClient(dbRet));
+                .then((dbRet)=>loginClient(dbRet));
           } else {
             global.database.register(message['parameters'])
                 .then(function(dbRet) {
@@ -55,6 +55,27 @@ class LobbyServer {
       !server.checkRegClient(client, message)) {
         client.terminate();
       }
+
+      function loginClient(dbRet) {
+        const isLoggedIn = dbRet[0];
+
+        if (isLoggedIn) {
+          client.state = new ClientState({
+            username: message['parameters']['usr'],
+            accLevel: dbRet[1],
+          });
+          client.state.login();
+
+          // console.log('client authenticated');
+          client.connectivity = 10;
+          client.respondedKeepAlive = true;
+          client.keepAlive = server.processPing(client);
+
+          server.players[client.state.username] = client;
+
+          server.stateDump(client, 'LOGIN');
+        }
+      }
     });
 
     eventEmitter.on('disconnect', function(client) {
@@ -65,27 +86,6 @@ class LobbyServer {
     eventEmitter.on('commandFromAutohost', function() {
       // do something with autohost incoming interface msg
     });
-
-    function loginClient(dbRet) {
-      const isLoggedIn = dbRet[0];
-
-      if (isLoggedIn) {
-        client.state = new ClientState({
-          username: message['parameters']['usr'],
-          accLevel: dbRet[1],
-        });
-        client.state.login();
-
-        // console.log('client authenticated');
-        client.connectivity = 10;
-        client.respondedKeepAlive = true;
-        client.keepAlive = server.processPing(client);
-
-        server.players[client.state.username] = client;
-
-        server.stateDump(client, 'LOGIN');
-      }
-    }
   }
 
   checkRegClient(client, message) {
@@ -556,7 +556,6 @@ class LobbyServer {
         'usrstats': ppl.state.getState(),
         'games': games,
         'chats': Object.keys(this.chats),
-        'chatmsg': chatMsg,
         'poll': poll,
         'team': team,
         'AIs': AIs,
