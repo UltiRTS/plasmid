@@ -150,9 +150,8 @@ class LobbyServer {
         if (channelName in this.chats) {
           for (const ppl of this.chats[channelName]) {
             // now let everyone else know
-            ppl.state.chatMsg = {'channelName': channelName, 'msg': chatMsg};
             this.stateDump(ppl, 'SAYCHAT');
-            ppl.writeChatMsg = {'channelName': '', 'msg': ''};
+            ppl.state.writeChatMsg({'channelName': channelName, 'author': client.state.username, 'msg': chatMsg});
             // TODO: add autohost msg relay
             // if (this.rooms.hasOwnProperty(channelName)) {
             //   const roomObj = this.rooms[channelName];
