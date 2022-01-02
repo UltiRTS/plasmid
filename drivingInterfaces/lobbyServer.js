@@ -29,7 +29,7 @@ class LobbyServer {
         // console.log('processing messages');
         server.processLoggedClient(client, message);
       } else if (message['action'] == 'REGISTER' &&
-        server.checkRegClient(client, message)) {
+      server.checkRegClient(client, message)) {
         global.database.checkDup(message['parameters']).then((dup)=>{
           if (dup) {
             global.database.authenticate(message['parameters'])
@@ -37,23 +37,15 @@ class LobbyServer {
           } else {
             global.database.register(message['parameters'])
                 .then(function(dbRet) {
-                  if (dbRet[0]) {
-                    client.state = new ClientState('testToken', {
-                      username: message['parameters']['usr'],
-                      accLevel: dbRet[1],
-                    });
-                    client.connectivity = 10;
-                    client.respondedKeepAlive = true;
-                    client.keepAlive = server.processPing(client);
-                    client.state.login();
-                    server.stateDump(client, 'REGISTER');
-                  }
+                  loginClient(dbRet);
                 });
           }
         });
       } else if (message['action'] == 'REGISTER' &&
       !server.checkRegClient(client, message)) {
         client.terminate();
+      } else {
+        eventEmitter.emit('disconnect', client);
       }
 
       function loginClient(dbRet) {
@@ -79,7 +71,7 @@ class LobbyServer {
     });
 
     eventEmitter.on('disconnect', function(client) {
-      // console.log('client disconnected');
+      console.log('logging out this client');
       server.logOutClient(client);
     });
 
@@ -113,6 +105,7 @@ class LobbyServer {
     switch (action) {
       case 'PONG': {
         client.respondedKeepAlive = true;
+        client.connectivity=10;
       }
       case 'JOINCHAT': {
         let chatToJoin;
@@ -477,7 +470,7 @@ class LobbyServer {
     const server = this;
     function checkPing() {
       client.send(JSON.stringify({'action': 'PING'}));
-      if (client.respondedKeepAlive) {
+      if (!client.respondedKeepAlive) {
         client.connectivity--;
       } // deduct client hp if it hasnt responded the previous ping
       // this will be set true once the client responds
@@ -513,20 +506,24 @@ class LobbyServer {
   // or there will be memory leaks
   logOutClient(client) { // server inited disconnect
     // remove client from all chats
-    for (const chat of client.joinedChats) {
-      this.processLoggedClientCmd('LEAVECHAT', client, {'chatName': chat});
+    try {
+      for (const chat of client.joinedChats) {
+        this.processLoggedClientCmd('LEAVECHAT', client, {'chatName': chat});
+      }
+
+      // remove client from all battles
+      for (const battle of client.joinedBattles) {
+        this.processLoggedClientCmd('LEAVEGAME', client, {
+          'battleName': battle,
+        });
+      }
+
+      clearInterval(client[token].keepAlive);
+
+      delete this.players[client.state.username];
+    } catch (e) {
+      console.log('no clients to iterate over and remove! this typically happens on a test server.', e);
     }
-
-    // remove client from all battles
-    for (const battle of client.joinedBattles) {
-      this.processLoggedClientCmd('LEAVEGAME', client, {
-        'battleName': battle,
-      });
-    }
-
-    clearInterval(client[token].keepAlive);
-
-    delete this.players[client.state.username];
   }
 
   // set an event listener for client disconnect
