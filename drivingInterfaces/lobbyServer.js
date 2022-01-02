@@ -1,3 +1,4 @@
+/* eslint-disable guard-for-in */
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 const {initLobbyServerNetwork} = require('../lib/lobbyServerNetwork');
@@ -106,6 +107,7 @@ class LobbyServer {
       case 'PONG': {
         client.respondedKeepAlive = true;
         client.connectivity=10;
+        break;
       }
       case 'JOINCHAT': {
         let chatToJoin;
@@ -197,11 +199,10 @@ class LobbyServer {
           this.rooms[battleToJoin]=new RoomState(client.state.username, 'Comet Catcher Redux', Object.keys(this.rooms).length);
         }
         client.state.joinRoom(battleToJoin);
-        const playerList = this.rooms[battleToJoin].getPlayers();
-        const playerListObj= this.usernames2ClientObj(playerList);
-        for (const ppl of playerListObj) {
+        // const playerList = this.rooms[battleToJoin].getPlayers();
+        for (const ppl in this.players) {
           // now let everyone else know
-          this.stateDump(ppl, 'JOINGAME');
+          this.stateDump(this.players[ppl], 'JOINGAME');
         }
         break;
       }
