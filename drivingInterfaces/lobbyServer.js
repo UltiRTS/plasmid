@@ -1,3 +1,4 @@
+/* eslint-disable brace-style */
 /* eslint-disable guard-for-in */
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
@@ -19,17 +20,40 @@ class LobbyServer {
     initLobbyServerNetwork();
     const server = this;
     eventEmitter.on('commandFromClient', function(client, message) {
-      if (message['action'] == 'LOGIN') {
+      // unlloged in, we log it in
+      if (message['action'] == 'LOGIN' && server.checkLoginClient(client, message)) {
         // console.log(client)
         global.database.authenticate(message['parameters'])
             .then((dbRet)=>loginClient(dbRet));
-      } else if (message['action'] == 'LOGIN' &&
+      }
+
+      // unlogged in, banned, we disconnect
+      else if (message['action'] == 'LOGIN' &&
       !server.checkLoginClient(client, message)) {
         client.terminate();
-      } else if ('state' in client && client.state.loggedIn) {
-        // console.log('processing messages');
-        server.processLoggedClient(client, message);
-      } else if (message['action'] == 'REGISTER' &&
+      }
+
+      // logged in, agree or hasnt yet agreed to the contract
+      else if ('state' in client && client.state.loggedIn) {
+        global.database.checkBlocked(client.state.username).then((blocked) => {
+          switch (blocked) {
+            case 'no':
+              server.processLoggedClient(client, message);
+              break;
+            case 'regConfirm':
+              if (message['action'] == 'regConfirm') {
+                global.database.confirmReg(client.state.username).then((dbRet) => {
+                  server.processLoggedClient(client, message);
+                });
+              } else {
+                eventEmitter.emit('disconnect', client);
+              }
+          }
+        });
+      }
+
+      // unregistered, we register
+      else if (message['action'] == 'REGISTER' &&
       server.checkRegClient(client, message)) {
         global.database.checkDup(message['parameters']).then((dup)=>{
           if (dup) {
@@ -38,14 +62,23 @@ class LobbyServer {
           } else {
             global.database.register(message['parameters'])
                 .then(function(dbRet) {
+                  global.database.getSignUpContract().then((contract) => {
+                    server.clientSendNotice(client, 'regConfirm', contract);
+                  });
                   loginClient(dbRet);
                 });
           }
         });
-      } else if (message['action'] == 'REGISTER' &&
+      }
+
+      // unregistered, banned, we disconnect
+      else if (message['action'] == 'REGISTER' &&
       !server.checkRegClient(client, message)) {
         client.terminate();
-      } else {
+      }
+
+      // garbage data, disconnect
+      else {
         eventEmitter.emit('disconnect', client);
       }
 
@@ -100,8 +133,6 @@ class LobbyServer {
 
   processLoggedClient(client, message) {
     const action = message['action'];
-
-    // var username = client.username
 
     switch (action) {
       case 'PONG': {
@@ -197,6 +228,7 @@ class LobbyServer {
           this.rooms[battleToJoin].setPlayer(username, 'A');
         } catch {
           this.rooms[battleToJoin]=new RoomState(client.state.username, 'Comet Catcher Redux', Object.keys(this.rooms).length);
+          this.rooms[battleToJoin].setRoomName(battleToJoin);
         }
         client.state.joinRoom(battleToJoin);
         // const playerList = this.rooms[battleToJoin].getPlayers();
@@ -552,7 +584,7 @@ class LobbyServer {
       const response = {
         'usrstats': ppl.state.getState(),
         'games': games,
-        'chats': Object.keys(this.chats),
+        // 'chats': Object.keys(this.chats),    // nope?
         'poll': poll,
         'team': team,
         'AIs': AIs,
