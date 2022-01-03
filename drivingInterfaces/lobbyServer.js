@@ -6,6 +6,8 @@ const {initLobbyServerNetwork} = require('../lib/lobbyServerNetwork');
 // const ClientState = require('./clientState').default;
 const {ClientState} = require('../state/client');
 const {RoomState} = require('../state/room');
+const ChatObj = require('../state/chat');
+
 
 const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
@@ -148,15 +150,17 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid chat name');
         }
 
-        if (!(chatToJoin in this.chats)) this.chats[chatToJoin] = [];
+        if (!(chatToJoin in this.chats)) this.chats[chatToJoin] = new ChatObj(chatToJoin);
         // console.log(Object.keys(this.chats));
 
-        this.chats[chatToJoin].push(client);
+        this.chats[chatToJoin].clients.push(client.state.username);
 
         // now this user has joined chat
         // add this user to the chat's list of users
         client.state.joinChat(chatToJoin);
-        for (const ppl of this.chats[chatToJoin]) {
+        // console.log(client.state.chats);
+        const usersinchat = this.usernames2ClientObj(this.chats[chatToJoin].clients);
+        for (const ppl of usersinchat) {
           // now let everyone else know
           this.stateDump(ppl, 'JOINCHAT');
         }
@@ -173,8 +177,10 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
 
-        if (channelName in this.chats) {
-          for (const ppl of this.chats[channelName]) {
+        if (channelName in this.chats && this.chats[channelName].clients.includes(client.state.username)) {
+          this.chats[channelName].recordChat(client.state.username, channelName, chatMsg);
+          const pplObjs=this.usernames2ClientObj(this.chats[channelName].clients);
+          for (const ppl of pplObjs) {
             // now let everyone else know
             ppl.state.writeChatMsg({'channelName': channelName, 'author': client.state.username, 'msg': chatMsg});
             this.stateDump(ppl, 'SAYCHAT');
@@ -188,6 +194,7 @@ class LobbyServer {
           this.stateDump(client, 'SAYCHAT');
         }
 
+
         break;
       }
       case 'LEAVECHAT': {
@@ -199,8 +206,8 @@ class LobbyServer {
         }
 
         try {
-          this.chats[chatToLeave]
-              .splice(this.chats[chatToLeave].indexOf(client), 1);
+          this.chats[chatToLeave].clients
+              .splice(this.chats[chatToLeave].clients.indexOf(client), 1);
           // console.log('LEAVING CHAT', chatToLeave);
           // console.log(this.chats);
         } catch {
@@ -209,7 +216,7 @@ class LobbyServer {
         // remove this user from the chat's list of users
         client.state.leaveChat(chatToLeave);
         this.stateDump(client, 'LEAVECHAT');
-        for (const ppl of this.chats[chatToLeave]) {
+        for (const ppl of this.chats[chatToLeave].clients) {
           this.stateDump(ppl, 'LEAVECHAT');
         }
         break;
@@ -566,7 +573,9 @@ class LobbyServer {
 
     // get all games
     const games = this.getAllGames();
-    // const games = this.rooms;
+
+    // get chat index
+    const chatIndex = this.getChatIndex();
 
 
     // dump the poll as well if the person is in a game
@@ -581,10 +590,11 @@ class LobbyServer {
     }
 
     global.database.getAllNotifications(ppl.state.userID).then((notifications) => {
+      // console.log(ppl.state.getState());
       const response = {
         'usrstats': ppl.state.getState(),
         'games': games,
-        // 'chats': Object.keys(this.chats),    // nope?
+        'chatsIndex': chatIndex,
         'poll': poll,
         'team': team,
         'AIs': AIs,
@@ -599,6 +609,16 @@ class LobbyServer {
     });
   }
 
+  getChatIndex() {
+    const chatDictToReturn={};
+    for (const chatName in this.chats) {
+      chatDictToReturn[chatName] = {};
+      chatDictToReturn[chatName].chatType = this.chats[chatName].chatType;
+      chatDictToReturn[chatName].chatDescription = this.chats[chatName].chatDescription;
+      chatDictToReturn[chatName].clients = this.chats[chatName].clients;
+    }
+    return chatDictToReturn;
+  }
 
   getAllGames() {
     const games = [];
