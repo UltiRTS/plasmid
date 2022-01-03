@@ -22,11 +22,11 @@ class LobbyServer {
     initLobbyServerNetwork();
     const server = this;
     eventEmitter.on('commandFromClient', function(client, message) {
-      // unlloged in, we log it in
+      // unlloged in, we log it in and check if the client agreed to the contract
+      // when registering; if not, we reprompt the contract
       if (message['action'] == 'LOGIN' && server.checkLoginClient(client, message)) {
-        // console.log(client)
         global.database.authenticate(message['parameters'])
-            .then((dbRet)=>loginClient(dbRet));
+            .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
       }
 
       // unlogged in, banned, we disconnect
@@ -35,7 +35,8 @@ class LobbyServer {
         client.terminate();
       }
 
-      // logged in, agree or hasnt yet agreed to the contract
+      // logged in, we assume the client has received contract prompt during login, it
+      // has to agree to it now to continue. Or, it may continue if it agreed to it previously
       else if ('state' in client && client.state.loggedIn) {
         global.database.checkBlocked(client.state.username).then((blocked) => {
           switch (blocked) {
@@ -54,20 +55,17 @@ class LobbyServer {
         });
       }
 
-      // unregistered, we register
+      // unregistered, we register, then login with contract prompt
       else if (message['action'] == 'REGISTER' &&
       server.checkRegClient(client, message)) {
         global.database.checkDup(message['parameters']).then((dup)=>{
           if (dup) {
             global.database.authenticate(message['parameters'])
-                .then((dbRet)=>loginClient(dbRet));
+                .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
           } else {
             global.database.register(message['parameters'])
                 .then(function(dbRet) {
-                  global.database.getSignUpContract().then((contract) => {
-                    server.clientSendNotice(client, 'regConfirm', contract);
-                  });
-                  loginClient(dbRet);
+                  loginClientWithLimitsCheck(dbRet);
                 });
           }
         });
@@ -84,9 +82,23 @@ class LobbyServer {
         eventEmitter.emit('disconnect', client);
       }
 
+      function loginClientWithLimitsCheck(dbRet) {
+        global.database.checkBlocked(message['parameters']['usr']).then((blocked) => {
+          switch (blocked) {
+            case 'regConfirm':
+              global.database.getSignUpContract().then((contract) => {
+                server.clientSendNotice(client, 'regConfirm', contract);
+              });
+              loginClient(dbRet);
+              break;
+            default:
+              loginClient(dbRet);
+          }
+        });
+      }
+
       function loginClient(dbRet) {
         const isLoggedIn = dbRet[0];
-
         if (isLoggedIn) {
           client.state = new ClientState({
             username: message['parameters']['usr'],
@@ -105,6 +117,7 @@ class LobbyServer {
         }
       }
     });
+
 
     eventEmitter.on('disconnect', function(client) {
       console.log('logging out this client');
