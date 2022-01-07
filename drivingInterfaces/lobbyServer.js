@@ -115,6 +115,9 @@ class LobbyServer {
 
           server.stateDump(client, 'LOGIN');
         }
+        else {
+          server.clientSendNotice(client, 'errorLogin', 'Incorrect credentials');
+        }
       }
     });
 
