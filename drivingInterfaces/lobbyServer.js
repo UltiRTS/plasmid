@@ -17,9 +17,9 @@ class LobbyServer {
   rooms = {};
   players = {}; // holds all connected clients;
 
-  constructor() {
+  constructor(port) {
     console.log('lobby server started!');
-    initLobbyServerNetwork();
+    initLobbyServerNetwork(port);
     const server = this;
     eventEmitter.on('commandFromClient', function(client, message) {
       // unlloged in, we log it in and check if the client agreed to the contract
@@ -628,10 +628,10 @@ class LobbyServer {
   getChatIndex() {
     const chatDictToReturn={};
     for (const chatName in this.chats) {
-      chatDictToReturn[chatName] = {};
-      chatDictToReturn[chatName].chatType = this.chats[chatName].chatType;
-      chatDictToReturn[chatName].chatDescription = this.chats[chatName].chatDescription;
-      chatDictToReturn[chatName].clients = this.chats[chatName].clients;
+      chatDictToReturn[chatName]={
+        chatType: this.chats[chatName].chatType,
+        chatDescription: this.chats[chatName].chatDescription,
+        clients: this.chats[chatName].clients};
     }
     return chatDictToReturn;
   }

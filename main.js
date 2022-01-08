@@ -20,4 +20,4 @@ global.eventEmitter = new EventEmitter();
 // eslint-disable-next-line no-unused-vars
 autohostServer=new AutohostManager(Config.autohosts);
 // eslint-disable-next-line no-unused-vars
-lobbyServer=new LobbyServer();
+lobbyServer=new LobbyServer(Config.port);
