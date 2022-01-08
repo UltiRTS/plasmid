@@ -278,7 +278,7 @@ class LobbyServer {
           return;
         } // hackery going on
         client.state.leaveRoom(battleToLeave);
-        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerList = this.rooms[battleToLeave].getPlayerList();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'LEAVEGAME');
