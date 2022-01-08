@@ -631,7 +631,8 @@ class LobbyServer {
       chatDictToReturn[chatName]={
         chatType: this.chats[chatName].chatType,
         chatDescription: this.chats[chatName].chatDescription,
-        clients: this.chats[chatName].clients};
+        clients: this.chats[chatName].clients,
+      };
     }
     return chatDictToReturn;
   }
