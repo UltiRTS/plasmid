@@ -563,12 +563,12 @@ class LobbyServer {
   logOutClient(client) { // server inited disconnect
     // remove client from all chats
     try {
-      for (const chat of client.joinedChats) {
+      for (const chat of client.state.joinedChats) {
         this.processLoggedClientCmd('LEAVECHAT', client, {'chatName': chat});
       }
 
       // remove client from all battles
-      for (const battle of client.joinedBattles) {
+      for (const battle of client.state.joinedBattles) {
         this.processLoggedClientCmd('LEAVEGAME', client, {
           'battleName': battle,
         });
