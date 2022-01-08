@@ -2,90 +2,37 @@ const assert = require('assert');
 const {RoomState} = require('../state/room');
 
 describe('RoomStateIntegrity', () => {
-  describe('all', () => {
-    it('output should equals to set', () => {
-      const roomState = new RoomState('testHoster');
+  const roomState = new RoomState('test', 'Comet Catcher Redux', 0, '');
 
-      roomState.addAI('A');
-      roomState.addAI('B');
-      roomState.addPlayer('tom', 'A');
-      roomState.addPlayer('teddy', 'B');
-      roomState.addChicken('B');
-      roomState.addChicken('C');
-      roomState.addSpectator('spec1');
-      roomState.setMap('somemap');
-
-      // the following code is out of date!
-      const engineLaunchObj = roomState.configureToStart();
-      assert.equal(String(engineLaunchObj),
-          String({
-            map: 'somemap',
-            testHoster0: {
-              index: 0,
-              isAI: false,
-              isChicken: false,
-              isSpectator: false,
-              isLeader: true,
-              team: 'A',
-            },
-            tom1: {
-              index: 1,
-              isAI: false,
-              isChicken: false,
-              isSpectator: false,
-              isLeader: false,
-              team: 'A',
-            },
-            teddy2: {
-              index: 2,
-              isAI: false,
-              isChicken: false,
-              isSpectator: false,
-              isLeader: false,
-              team: 'B',
-            },
-            CircuitAI3: {
-              index: 3,
-              isAI: false,
-              isChicken: false,
-              isSpectator: false,
-              isLeader: false,
-              team: 'A',
-            },
-            CircuitAI4: {
-              index: 4,
-              isAI: false,
-              isChicken: false,
-              isSpectator: false,
-              isLeader: false,
-              team: 'B',
-            },
-            Chicken5: {
-              index: 5,
-              isAI: false,
-              isChicken: false,
-              isSpectator: false,
-              isLeader: false,
-              team: 'B',
-            },
-            Chicken6: {
-              index: 6,
-              isAI: false,
-              isChicken: false,
-              isSpectator: false,
-              isLeader: false,
-              team: 'C',
-            },
-            spec17: {
-              index: 7,
-              isAI: false,
-              isChicken: false,
-              isSpectator: true,
-              isLeader: false,
-              team: 'A',
-            },
-          },
-          ));
+  describe('addAI', ()=> {
+    roomState.pushAIs([{'CircuitAI': 'A'},
+      {'CircuitAI': 'B'}, {'CircuitAI': 'C'}]);
+    it('AI should be equal', ()=>{
+      assert.equal(roomState.AIs.length, 3);
+      assert.equal(roomState.AIs[0].CircuitAI, 'A');
+      assert.equal(roomState.AIs[1].CircuitAI, 'B');
+      assert.equal(roomState.AIs[2].CircuitAI, 'C');
+    });
+  });
+  describe('addChicken', ()=> {
+    roomState.pushChickens([{'Chicken': 'A'},
+      {'Chicken': 'B'}, {'Chicken': 'C'}]);
+    it('Chicken should be equal', ()=>{
+      assert.equal(roomState.chickens.length, 3);
+      assert.equal(roomState.chickens[0].Chicken, 'A');
+      assert.equal(roomState.chickens[1].Chicken, 'B');
+      assert.equal(roomState.chickens[2].Chicken, 'C');
+    });
+  });
+  describe('addPlayers', () => {
+    roomState.pushPlayers([{'player1': 'A'},
+      {'player2': 'B'}, {'player3': 'C'}]);
+    it('Player should be equal', ()=>{
+      assert.equal(roomState.players.length, 4);
+      assert.equal(roomState.players[0].test, 'A');
+      assert.equal(roomState.players[1].player1, 'A');
+      assert.equal(roomState.players[2].player2, 'B');
+      assert.equal(roomState.players[3].player3, 'C');
     });
   });
 });

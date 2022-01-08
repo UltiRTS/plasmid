@@ -267,7 +267,7 @@ class RoomState {
    * @param {object} players
    */
   pushPlayers(players) {
-    this.players.push(players);
+    this.players = this.players.concat(players);
   }
 
   // get AI dict
@@ -351,6 +351,17 @@ class RoomState {
     engineLaunchObj['mgr']=this.responsibleAutohost;
     engineLaunchObj['map'] = this.map;
     engineLaunchObj['team']={};
+
+    const teamMapping = {};
+    let teamCount = 0;
+    for (const player of this.players) {
+      const team = player[Object.keys(player)[0]];
+      if (!(team in teamMapping)) {
+        teamMapping[team] = teamCount;
+        teamCount++;
+      }
+    }
+
     for (const player of this.players) {
       const playerName = Object.keys(player)[0];
       if (playerName === 'CircuitAI' || playerName === 'Chicken') continue;
@@ -362,7 +373,7 @@ class RoomState {
         isChicken: false,
         isSpectator: false,
         isLeader: playerName == this.hoster,
-        team: player[playerName],
+        team: teamMapping[player[playerName]] || 0,
       };
       count++;
     }
@@ -374,11 +385,11 @@ class RoomState {
       const AIId = AIName + count;
       engineLaunchObj.team[AIId] = {
         index: count,
-        isAI: false,
+        isAI: true,
         isChicken: false,
         isSpectator: false,
         isLeader: false,
-        team: AI[AIName],
+        team: teamMapping[AI[AIName]] || 0,
       };
       count++;
     }
@@ -391,10 +402,10 @@ class RoomState {
       engineLaunchObj.team[ChickenId] = {
         index: count,
         isAI: false,
-        isChicken: false,
+        isChicken: true,
         isSpectator: false,
         isLeader: false,
-        team: Chicken[ChickenName],
+        team: teamMapping[Chicken[ChickenName]] || 0,
       };
       count++;
     }
@@ -407,7 +418,8 @@ class RoomState {
         isChicken: false,
         isSpectator: true,
         isLeader: false,
-        team: 'A',
+        // always team 0 for spectators
+        team: 0,
       };
       count++;
     }
