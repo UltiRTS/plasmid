@@ -203,6 +203,73 @@ class RoomState {
     }
   }
 
+  /**
+   *
+   * @param {object} ai
+   * @return {boolean}
+   */
+  checkAIFormat(ai) {
+    return Object.keys(ai)[0] === 'CircuitAI';
+  }
+
+  /**
+   *
+   * @param {object} chicken
+   * @return {boolean}
+   */
+  checkChickenFormat(chicken) {
+    return Object.keys(chicken)[0] === 'Chicken';
+  }
+
+  /**
+   *
+   * @param {String} spectator
+   * @return {boolean}
+   */
+  checkSpectator(spectator) {
+    return typeof(spectator) === 'string';
+  }
+
+  /**
+   *
+   * @param {object} AIs
+   */
+  pushAIs(AIs) {
+    for (const ai of AIs) {
+      if (this.checkAIFormat(ai)) {
+        this.AIs.push(ai);
+      }
+    }
+  }
+
+  /**
+   *
+   * @param {object} chickens
+   */
+  pushChickens(chickens) {
+    for (const chick of chickens) {
+      if (this.checkChickenFormat(chick)) this.chickens.push(chick);
+    }
+  }
+
+  /**
+   *
+   * @param {object} spectators
+   */
+  pushSpectators(spectators) {
+    for (const spec of spectators) {
+      if (this.checkSpectator(spec)) this.spectators.push(spec);
+    }
+  }
+
+  /**
+   *
+   * @param {object} players
+   */
+  pushPlayers(players) {
+    this.players.push(players);
+  }
+
   // get AI dict
 
   /**
