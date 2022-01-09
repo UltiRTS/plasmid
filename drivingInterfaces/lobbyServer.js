@@ -240,14 +240,20 @@ class LobbyServer {
       case 'JOINGAME': { // join a game
         let battleToJoin;
         const username=client.state.username;
-        try {
+        try { // catch malformed request
           battleToJoin = message['parameters']['battleName'];
         } catch (e) {
           this.clientSendNotice(client, 'invalid battle name');
           console.log(e);
         }
 
-        try {
+        // if already in a game, leave it
+        if (client.state.room!='') {
+          this.rooms[battleToLeave].removePlayer(client.state.username);
+        }
+
+
+        try { // catch new room
           this.rooms[battleToJoin].setPlayer(username, 'A');
         } catch {
           this.rooms[battleToJoin]=new RoomState(client.state.username, 'Comet Catcher Redux', Object.keys(this.rooms).length);
@@ -568,11 +574,10 @@ class LobbyServer {
       }
 
       // remove client from all battles
-      for (const battle of client.state.joinedBattles) {
-        this.processLoggedClientCmd('LEAVEGAME', client, {
-          'battleName': battle,
-        });
-      }
+      this.processLoggedClientCmd('LEAVEGAME', client, {
+        'battleName': client.state.room,
+      });
+
 
       clearInterval(client[token].keepAlive);
 
