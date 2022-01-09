@@ -284,14 +284,14 @@ class LobbyServer {
           return;
         } // hackery going on
         client.state.leaveRoom(battleToLeave);
-        const playerList = this.rooms[battleToLeave].getPlayerList();
+        const playerList = this.rooms[battleToLeave].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'LEAVEGAME');
         }
       }
       case 'ADDFREUND': {
-        let freundtoadd;
+        let freundtoadd=false;
         let username;
         try {
           freundtoadd = message['parameters']['freund'];
@@ -299,7 +299,9 @@ class LobbyServer {
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid freund');
         } // hackery going on
-
+        if (!freundtoadd) {
+          break;
+        }
         // get the userID of the freund
         global.database.getUserID(freundtoadd).then((userID) => {
           global.database.writeNotification(userID, 0, confirmationType=
@@ -313,14 +315,18 @@ class LobbyServer {
 
       case 'CONFIRMSYSMSG': {
         let idtoconfirm;
-        let requesterusrname;
+        let requesterusrname = false;
         let AcceptNum;
         try {
           idtoconfirm = message['parameters']['id'];
           AcceptNum = message['parameters']['AcceptNum'];
-          requesterusrname = client.states.username;
+          requesterusrname = client.state.username;
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid confirmation');
+        }
+        if (!requesterusrname)
+        {
+          break;
         }
         global.database.getUserID(requesterusrname).then((userID) => {
           global.database.checkSysMsgStatus(idtoconfirm, usrID).then((msgStatus)=>{

@@ -47,6 +47,7 @@ const joinBattleJson = {
   },
 };
 
+
 const setTeamJson = {
   action: 'SETTEAM',
   parameters: {
@@ -58,6 +59,13 @@ const setTeamJson = {
 
 const startGameJson = {
   action: 'STARTGAME',
+  parameters: {
+    battleName: 'testBattle',
+  },
+};
+
+const leaveBattleJson = {
+  action: 'LEAVEGAME',
   parameters: {
     battleName: 'testBattle',
   },
@@ -94,6 +102,9 @@ socket.on('message', (message) => {
         break;
       case 'SETTEAM':
         socket.send(JSON.stringify(startGameJson));
+      case 'STARTGAME':
+        socket.send(JSON.stringify(leaveBattleJson));
+
     }
   }
 });
