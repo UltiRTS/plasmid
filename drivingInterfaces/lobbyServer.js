@@ -56,8 +56,7 @@ class LobbyServer {
       }
 
       // unregistered, we register, then login with contract prompt
-      else if (message['action'] == 'REGISTER' &&
-      server.checkRegClient(client, message)) {
+      else if (message['action'] == 'REGISTER') {
         global.database.checkDup(message['parameters']).then((dup)=>{
           if (dup) {
             global.database.authenticate(message['parameters'])
@@ -71,11 +70,6 @@ class LobbyServer {
         });
       }
 
-      // unregistered, banned, we disconnect
-      else if (message['action'] == 'REGISTER' &&
-      !server.checkRegClient(client, message)) {
-        client.terminate();
-      }
 
       // garbage data, disconnect
       else {
@@ -88,8 +82,8 @@ class LobbyServer {
             case 'regConfirm':
               global.database.getSignUpContract().then((contract) => {
                 server.clientSendNotice(client, 'regConfirm', contract);
+                loginClient(dbRet);
               });
-              loginClient(dbRet);
               break;
             default:
               loginClient(dbRet);
@@ -105,6 +99,8 @@ class LobbyServer {
             accLevel: dbRet[1],
           });
           client.state.login();
+          global.database.getUserID(client.state.username).then((userID) => {
+            client.state.writeUserID(userID);});
 
           // console.log('client authenticated');
           client.connectivity = 10;
@@ -132,18 +128,6 @@ class LobbyServer {
     });
   }
 
-  checkRegClient(client, message) {
-    // FIXME:
-    // check if the same mac or ip address are
-    // used to register multiple accounts,
-    // check if the ip address is banned
-    //    const isDupOK = !global.database.checkDup(message['parameters']);
-    //    const isBanOK = true;
-    //    if (isDupOK && isBanOK) {
-    //      return true;
-    //    }
-    return true;
-  }
 
   checkLoginClient(client, message) {
     return true;
@@ -268,6 +252,7 @@ class LobbyServer {
         break;
       }
       case 'LEAVEGAME': { // leave a game
+        console.log('received leaving game req');
         let battleToLeave;
 
         try {
@@ -289,6 +274,9 @@ class LobbyServer {
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'LEAVEGAME');
         }
+
+        // let the client that left know
+        this.stateDump(client, 'LEAVEGAME');
       }
       case 'ADDFREUND': {
         let freundtoadd=false;
@@ -304,9 +292,9 @@ class LobbyServer {
         }
         // get the userID of the freund
         global.database.getUserID(freundtoadd).then((userID) => {
-          global.database.writeNotification(userID, 0, confirmationType=
-            'freundConfirmation', username+' has requested to be your freund.',
-          {'requestingUser': username}).then(() => {
+          global.database.writeNotification(userID, 0, 'freundConfirmation',
+              username+' has requested to be your freund.',
+              {'requestingUser': username}).then(() => {
             this.stateDump(client, 'ADDFREUND');
           });
         });

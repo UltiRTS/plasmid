@@ -71,6 +71,14 @@ const leaveBattleJson = {
   },
 };
 
+const addFreundJson = {
+  action: 'ADDFREUND',
+  parameters: {
+    freund: 'test4',
+  },
+};
+
+
 const socket = new WebSocket('ws://localhost:9090');
 socket.on('open', function open() {
   socket.send(JSON.stringify(registerJson));
@@ -102,9 +110,14 @@ socket.on('message', (message) => {
         break;
       case 'SETTEAM':
         socket.send(JSON.stringify(startGameJson));
+        break;
       case 'STARTGAME':
         socket.send(JSON.stringify(leaveBattleJson));
-
+        console.log('sending leaving btl');
+        break;
+      case 'LEAVEGAME':
+        socket.send(JSON.stringify(addFreundJson));
+        break;
     }
   }
 });
