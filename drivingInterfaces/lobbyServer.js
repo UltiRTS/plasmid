@@ -374,7 +374,7 @@ class LobbyServer {
           try {
             const autohostNum=this.loadBalance();
             this.rooms[battleToStart].setResponsibleAutohost(autohostNum);
-
+            // this.rooms[battleToStart].id=this.rooms;
             autohostServer.start(this.rooms[battleToStart].configureToStart());
           } catch (e) {
             console.log('NU', e);
@@ -561,24 +561,27 @@ class LobbyServer {
   // must ensure that all references be deleted
   // or there will be memory leaks
   logOutClient(client) { // server inited disconnect
+    console.log('removing hb'+client.keepAlive);
+    clearInterval(client.keepAlive);
     // remove client from all chats
     try {
       for (const chat of client.state.joinedChats) {
         this.processLoggedClientCmd('LEAVECHAT', client, {'chatName': chat});
       }
-
+    } catch (e) {
+      console.log('client has no active chats');
+    }
+    try {
       // remove client from all battles
       this.processLoggedClientCmd('LEAVEGAME', client, {
         'battleName': client.state.room,
-      });
-
-
-      clearInterval(client[token].keepAlive);
-
-      delete this.players[client.state.username];
-    } catch (e) {
-      console.log('no clients to iterate over and remove! this typically happens on a test server.', e);
+      });}
+    catch (e) {
+      console.log('client has no active battles');
     }
+
+
+    delete this.players[client.state.username];
   }
 
   // set an event listener for client disconnect

@@ -16,7 +16,7 @@ class RoomState {
   // format ['spectator1', ...]
   spectators = [];
   polls = {};
-  ID=0;
+  id=0;
   password='';
   isStarted=false;
   responsibleAutohost=0;
