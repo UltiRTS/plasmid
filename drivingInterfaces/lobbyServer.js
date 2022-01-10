@@ -398,10 +398,14 @@ class LobbyServer {
         let battleToSetTeam;
         let team;
         let AIs;
+        let chickens;
+        let spectators;
         try {
           battleToSetTeam = message['parameters']['battleName'];
-          team = message['parameters']['team']; // {'tom':'A','bob':'A','alice':'B','xiaoming':'B'}
+          team = message['parameters']['team']; // [{'tom': 'A'}]
           AIs = message['parameters']['AIs'];
+          chickens = message['parameters']['chickens'];
+          spectators = message['parameters']['spectators'];
         } catch (e) {
           console.log(e);
           // eslint-disable-next-line max-len
@@ -417,21 +421,16 @@ class LobbyServer {
         this.rooms[battleToSetTeam].getHoster()) {
           try {
             this.rooms[battleToSetTeam].clearPoll();
-
-            const playerList = this.rooms[battleToSetTeam].getPlayers();
-            for (const ppl in playerList) { // GOING THROUGH A LIST OF REAL PLAYERS!!
-              // check if team[ppl.state.username] is undefined
-              if (team[ppl] == undefined) {
-                this.clientSendNotice(client,
-                    'info',
-                    'The requested team does not cover all players in the room');
-              } else {
-                this.rooms[battleToSetTeam].setPlayer(ppl, team[ppl]);
-                const singleClientInRoom = this.usernames2ClientObj([ppl])[0];
-                singleClientInRoom.state.setTeam(team[ppl]);
-              }
+            const players2set = this.rooms[battleToSetTeam].getPlayers();
+            if (players2set.length !== team.length) {
+              this.clientSendNotice(client, 'error', 'invalid team');
+              break;
             }
-            this.rooms[battleToSetTeam].setAI(AIs);
+
+            this.rooms[battleToSetTeam].pushAIs(AIs);
+            this.rooms[battleToSetTeam].pushChickens(chickens);
+            this.rooms[battleToSetTeam].pushSpectators(spectators);
+            this.rooms[battleToSetTeam].pushPlayers(team);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -443,6 +442,8 @@ class LobbyServer {
 
 
         const playerList = this.rooms[battleToSetTeam].getPlayers();
+        const spectatorList = this.rooms[battleToSetTeam].spectators;
+        playerList.push(...spectatorList);
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETTEAM');
@@ -598,13 +599,18 @@ class LobbyServer {
 
     // dump the poll as well if the person is in a game
     let poll = {};
-    let team = {};
-    let AIs = {};
+    let team = [];
 
     if (ppl.state.room != '') {
       poll = this.rooms[ppl.state.room].getPolls();
-      team = this.rooms[ppl.state.room].getPlayerTeam();
-      AIs = this.rooms[ppl.state.room].getAI();
+      team = [
+        ...this.rooms[ppl.state.room].AIs,
+        ...this.rooms[ppl.state.room].players,
+        ...this.rooms[ppl.state.room].chickens];
+
+      console.log(this.rooms[ppl.state.room].AIs);
+      console.log(this.rooms[ppl.state.room].players);
+      console.log(this.rooms[ppl.state.room].chickens);
     }
 
     global.database.getAllNotifications(ppl.state.userID).then((notifications) => {
@@ -615,7 +621,6 @@ class LobbyServer {
         'chatsIndex': chatIndex,
         'poll': poll,
         'team': team,
-        'AIs': AIs,
         'notifications': notifications,
       };
 

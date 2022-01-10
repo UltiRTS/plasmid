@@ -277,10 +277,8 @@ class RoomState {
    */
   getAI() {
     const returningAI=[];
-    for (const AI of this.AIs) {
-      for (const AIname of AI) {
-        returningAI.push(AIname);
-      }
+    for (let i=0; i<this.AIs.length; i++) {
+      returningAI.push(Object.keys(this.AIs[i])[0]);
     }
     return returningAI;
   }

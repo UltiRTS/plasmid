@@ -52,8 +52,12 @@ const setTeamJson = {
   action: 'SETTEAM',
   parameters: {
     battleName: 'testBattle',
-    team: {'tom': 'A', 'bob': 'A', 'alice': 'B', 'xiaoming': 'B', 'test': 'C'},
-    AIs: {'CircuitAI': 'A', 'CircuitAI': 'B', 'CircuitAI': 'C'},
+    // plasmid will block this cuz only one player connected
+    // team: [{'test4': 'A'}, {'tom': 'A'}, {'jerry': 'B'}],
+    team: [{'test4': 'A'}],
+    AIs: [{'CircuitAI': 'A'}, {'CircuitAI': 'B'}, {'CircuitAI': 'C'}],
+    chickens: [{'chicken': 'A'}, {'chicken': 'B'}, {'chicken': 'C'}],
+    spectators: [{'spec': 'A'}, {'spec': 'B'}, {'spec': 'C'}],
   },
 };
 
