@@ -24,14 +24,14 @@ class LobbyServer {
     eventEmitter.on('commandFromClient', function(client, message) {
       // unlloged in, we log it in and check if the client agreed to the contract
       // when registering; if not, we reprompt the contract
-      if (message['action'] == 'LOGIN' && server.checkLoginClient(client, message)) {
+      if (!sanityCheckClient()) return;
+      if (message['action'] == 'LOGIN') {
         global.database.authenticate(message['parameters'])
             .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
       }
 
       // unlogged in, banned, we disconnect
-      else if (message['action'] == 'LOGIN' &&
-      !server.checkLoginClient(client, message)) {
+      else if (message['action'] == 'LOGIN') {
         client.terminate();
       }
 
@@ -115,6 +115,10 @@ class LobbyServer {
           server.clientSendNotice(client, 'errorLogin', 'Incorrect credentials');
         }
       }
+
+      function sanityCheckClient() {
+        return true;
+      }
     });
 
 
@@ -128,10 +132,6 @@ class LobbyServer {
     });
   }
 
-
-  checkLoginClient(client, message) {
-    return true;
-  }
 
   processLoggedClient(client, message) {
     const action = message['action'];
