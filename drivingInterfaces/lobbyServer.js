@@ -30,10 +30,6 @@ class LobbyServer {
             .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
       }
 
-      // unlogged in, banned, we disconnect
-      else if (message['action'] == 'LOGIN') {
-        client.terminate();
-      }
 
       // logged in, we assume the client has received contract prompt during login, it
       // has to agree to it now to continue. Or, it may continue if it agreed to it previously
@@ -49,7 +45,7 @@ class LobbyServer {
                   server.processLoggedClient(client, message);
                 });
               } else {
-                eventEmitter.emit('disconnect', client);
+                eventEmitter.emit('clearfromlobbymemory', client);
               }
           }
         });
@@ -73,7 +69,7 @@ class LobbyServer {
 
       // garbage data, disconnect
       else {
-        eventEmitter.emit('disconnect', client);
+        eventEmitter.emit('clearfromlobbymemory', client);
       }
 
       function loginClientWithLimitsCheck(dbRet) {
@@ -122,7 +118,7 @@ class LobbyServer {
     });
 
 
-    eventEmitter.on('disconnect', function(client) {
+    eventEmitter.on('clearfromlobbymemory', function(client) {
       console.log('logging out this client');
       server.logOutClient(client);
     });
@@ -143,6 +139,7 @@ class LobbyServer {
         break;
       }
       case 'JOINCHAT': {
+        console.log('received joinchat req');
         let chatToJoin;
         try {
           chatToJoin = message['parameters']['chatName'];
@@ -153,12 +150,16 @@ class LobbyServer {
         if (!(chatToJoin in this.chats)) this.chats[chatToJoin] = new ChatObj(chatToJoin);
         // console.log(Object.keys(this.chats));
 
-        this.chats[chatToJoin].clients.push(client.state.username);
+        // if the client is not in that chat, push it
+        console.log(this.chats[chatToJoin].clients);
+        if (!(this.chats[chatToJoin].clients.includes(client.state.username)))
+        {
+          console.log('actually joining chat');
+          this.chats[chatToJoin].clients.push(client.state.username);
+          client.state.joinChat(chatToJoin);
+        }
 
-        // now this user has joined chat
-        // add this user to the chat's list of users
-        client.state.joinChat(chatToJoin);
-        // console.log(client.state.chats);
+
         const usersinchat = this.usernames2ClientObj(this.chats[chatToJoin].clients);
         for (const ppl of usersinchat) {
           // now let everyone else know
@@ -533,7 +534,7 @@ class LobbyServer {
       // this will be set true once the client responds
       client.respondedKeepAlive = false;
       if (client.connectivity <= 0) {
-        client.emit('disconnect');
+        client.emit('clearfromlobbymemory');
         server.logOutClient(client);
       }
     }
@@ -572,6 +573,18 @@ class LobbyServer {
     } catch (e) {
       console.log('client has no active chats');
     }
+
+    // if the client is present in ChatObj.clients, remove it
+    for (const chat in this.chats) {
+      if (this.chats[chat].clients.includes(client.state.username)) {
+        this.chats[chat].clients.splice(this.chats[chat].clients.indexOf(client.state.username), 1);
+      }
+      else {
+        console.log('chats dont have such client');
+      }
+    }
+
+
     try {
       // remove client from all battles
       this.processLoggedClientCmd('LEAVEGAME', client, {
@@ -581,7 +594,7 @@ class LobbyServer {
       console.log('client has no active battles');
     }
 
-
+    client.close();
     delete this.players[client.state.username];
   }
 
