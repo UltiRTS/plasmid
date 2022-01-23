@@ -7,7 +7,7 @@ class ClientState {
   team = '';
   username = '';
   freunds={};
-  chatMsg = {};
+  chatMsg = false;
   userID='';
 
   constructor(options={
@@ -45,6 +45,10 @@ class ClientState {
     this.team = 'A';
   }
 
+  getRoom() {
+    return this.room;
+  }
+
   leaveRoom() {
     this.room = '';
   }
@@ -60,6 +64,8 @@ class ClientState {
   }
 
   getState() {
+    console.log('client prototype returning chatmsg');
+    console.log(this.chatMsg);
     return {
       loggedIn: this.loggedIn,
       accLevel: this.accLevel,
@@ -79,6 +85,12 @@ class ClientState {
 
   writeChatMsg(msg) {
     this.chatMsg = msg;
+    console.log('writing chat msg');
+    console.log(this.chatMsg);
+  }
+  eraseChatMsg() {
+    console.log('erasing chat msg');
+    this.chatMsg = false;
   }
 }
 

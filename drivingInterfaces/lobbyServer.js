@@ -73,6 +73,7 @@ class LobbyServer {
       }
 
       function loginClientWithLimitsCheck(dbRet) {
+        if (!dbRet[0]) {return;}
         global.database.checkBlocked(message['parameters']['usr']).then((blocked) => {
           switch (blocked) {
             case 'regConfirm':
@@ -177,14 +178,20 @@ class LobbyServer {
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
-
+        // console.log(channelName);
+        // console.log(this.chats);
+        // console.log(this.chats[channelName].clients);
         if (channelName in this.chats && this.chats[channelName].clients.includes(client.state.username)) {
           this.chats[channelName].recordChat(client.state.username, channelName, chatMsg);
           const pplObjs=this.usernames2ClientObj(this.chats[channelName].clients);
           for (const ppl of pplObjs) {
             // now let everyone else know
+            // console.log('sending chat to ' + ppl.state.username);
             ppl.state.writeChatMsg({'channelName': channelName, 'author': client.state.username, 'msg': chatMsg});
             this.stateDump(ppl, 'SAYCHAT');
+            // console.log(ppl.state.chatMsg);
+
+            // console.log(ppl.state.chatMsg);
             // TODO: add autohost msg relay
             // if (this.rooms.hasOwnProperty(channelName)) {
             //   const roomObj = this.rooms[channelName];
@@ -234,7 +241,7 @@ class LobbyServer {
 
         // if already in a game, leave it
         if (client.state.room!='') {
-          this.rooms[battleToLeave].removePlayer(client.state.username);
+          this.rooms[client.state.getRoom()].removePlayer(client.state.username);
         }
 
 
@@ -563,7 +570,11 @@ class LobbyServer {
   // must ensure that all references be deleted
   // or there will be memory leaks
   logOutClient(client) { // server inited disconnect
-    console.log('removing hb'+client.keepAlive);
+    // console.log('removing hb'+client.keepAlive);
+    if (!client.state)
+    {
+      return;
+    }
     clearInterval(client.keepAlive);
     // remove client from all chats
     try {
@@ -574,7 +585,7 @@ class LobbyServer {
       console.log('client has no active chats');
     }
 
-    // if the client is present in ChatObj.clients, remove it
+    // if the client is present in this.chats.clients, remove it
     for (const chat in this.chats) {
       if (this.chats[chat].clients.includes(client.state.username)) {
         this.chats[chat].clients.splice(this.chats[chat].clients.indexOf(client.state.username), 1);
@@ -617,13 +628,13 @@ class LobbyServer {
     if (ppl.state.room != '') {
       poll = this.rooms[ppl.state.room].getPolls();
       team = [
-        ...this.rooms[ppl.state.room].AIs,
-        ...this.rooms[ppl.state.room].players,
-        ...this.rooms[ppl.state.room].chickens];
+        this.rooms[ppl.state.room].AIs,
+        this.rooms[ppl.state.room].players,
+        this.rooms[ppl.state.room].chickens];
 
-      console.log(this.rooms[ppl.state.room].AIs);
-      console.log(this.rooms[ppl.state.room].players);
-      console.log(this.rooms[ppl.state.room].chickens);
+      // console.log(this.rooms[ppl.state.room].AIs);
+      // console.log(this.rooms[ppl.state.room].players);
+      // console.log(this.rooms[ppl.state.room].chickens);
     }
 
     global.database.getAllNotifications(ppl.state.userID).then((notifications) => {
@@ -636,12 +647,13 @@ class LobbyServer {
         'team': team,
         'notifications': notifications,
       };
-
+      console.log(ppl.state.getState());
       ppl.send(JSON.stringify({
         'action': 'stateDump',
         triggeredBy,
         'paramaters': response,
       }));
+      ppl.state.eraseChatMsg();
     });
   }
 
