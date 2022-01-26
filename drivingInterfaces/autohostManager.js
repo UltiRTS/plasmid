@@ -13,9 +13,9 @@ class AutohostManager {
    * @param {Array} availableServers
    */
   constructor(availableServers) {
+    this.availableautohostIPs=availableServers;
     const server=this;
     initAutohostServerNetwork(availableServers);
-    console.log(availableServers);
     eventEmitter.on('commandFromAutohost', function(client, message) {
       switch (message.action) {
         case 'sayChat':
@@ -50,6 +50,10 @@ class AutohostManager {
     } catch (err) {
       console.log('no active autohost!');
     }
+  }
+
+  autohostIDtoIP(autohostID) {
+    return this.availableautohostIPs[autohostID];
   }
 }
 

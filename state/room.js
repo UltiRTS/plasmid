@@ -19,7 +19,7 @@ class RoomState {
   id=0;
   password='';
   isStarted=false;
-  responsibleAutohost=0;
+  responsibleAutohost='127.0.0.1';
 
   /**
    *
@@ -44,6 +44,9 @@ class RoomState {
     this.title = roomName;
   }
 
+  getPort() {
+    return this.id+2000;
+  }
   // get room title
 
   /**
@@ -102,10 +105,10 @@ class RoomState {
 
   // set responsible autohost
   /**
-   * @param {int} id of the autohost in the config
+   * @param {int} ip of the autohost in the config
    */
-  setResponsibleAutohost(id) {
-    this.responsibleAutohost = id;
+  setResponsibleAutohost(ip) {
+    this.responsibleAutohost = ip;
   }
 
   // get responsible autohost
@@ -221,6 +224,9 @@ class RoomState {
     return Object.keys(chicken)[0] === 'Chicken';
   }
 
+  getMap() {
+    return this.map;
+  }
   /**
    *
    * @param {String} spectator

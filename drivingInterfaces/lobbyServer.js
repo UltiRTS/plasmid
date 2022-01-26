@@ -250,6 +250,8 @@ class LobbyServer {
         } catch {
           this.rooms[battleToJoin]=new RoomState(client.state.username, 'Comet Catcher Redux', Object.keys(this.rooms).length);
           this.rooms[battleToJoin].setRoomName(battleToJoin);
+          const autohostIPNum=this.loadBalance();
+          this.rooms[battleToJoin].setResponsibleAutohost(autohostIPNum);
         }
         client.state.joinRoom(battleToJoin);
         // const playerList = this.rooms[battleToJoin].getPlayers();
@@ -380,8 +382,6 @@ class LobbyServer {
           client.state.username ==
           this.rooms[battleToStart].getHoster()) {
           try {
-            const autohostNum=this.loadBalance();
-            this.rooms[battleToStart].setResponsibleAutohost(autohostNum);
             // this.rooms[battleToStart].id=this.rooms;
             autohostServer.start(this.rooms[battleToStart].configureToStart());
           } catch (e) {
@@ -622,11 +622,9 @@ class LobbyServer {
 
 
     // dump the poll as well if the person is in a game
-    let poll = {};
     let team = [];
 
     if (ppl.state.room != '') {
-      poll = this.rooms[ppl.state.room].getPolls();
       team = [
         this.rooms[ppl.state.room].AIs,
         this.rooms[ppl.state.room].players,
@@ -643,7 +641,6 @@ class LobbyServer {
         'usrstats': ppl.state.getState(),
         'games': games,
         'chatsIndex': chatIndex,
-        'poll': poll,
         'team': team,
         'notifications': notifications,
       };
@@ -674,11 +671,14 @@ class LobbyServer {
 
     // eslint-disable-next-line guard-for-in
     for (const battle in this.rooms) {
-      const players = this.rooms[battle].getPlayers();
       games.push({
+        'polls': this.rooms[battle].getPolls(),
         'battleName': this.rooms[battle].getTitle(),
         'isStarted': this.rooms[battle].checkStarted(),
-        'players': players,
+        'players': this.rooms[battle].getPlayers(),
+        'map': this.rooms[battle].getMap(),
+        'port': this.rooms[battle].getPort(),
+        'ip': this.rooms[battle].getResponsibleAutohost(),
       });
     }
     return games;
@@ -689,7 +689,7 @@ class LobbyServer {
    * @return {Number}
    */
   loadBalance() {
-    return 0;
+    return autohostServer.autohostIDtoIP(0);
   }
 }
 
