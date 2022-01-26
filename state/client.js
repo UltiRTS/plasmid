@@ -72,7 +72,6 @@ class ClientState {
       chats: this.chats,
       room: this.room,
       team: this.team,
-      token: this.token,
       fruneds: this.freunds,
       chatMsg: this.chatMsg,
       username: this.username,
