@@ -45,7 +45,7 @@ class LobbyServer {
                   server.processLoggedClient(client, message);
                 });
               } else {
-                eventEmitter.emit('clearfromlobbymemory', client);
+                eventEmitter.emit('clearFromLobbyMemory', client);
               }
           }
         });
@@ -69,7 +69,7 @@ class LobbyServer {
 
       // garbage data, disconnect
       else {
-        eventEmitter.emit('clearfromlobbymemory', client);
+        eventEmitter.emit('clearFromLobbyMemory', client);
       }
 
       function loginClientWithLimitsCheck(dbRet) {
@@ -119,7 +119,7 @@ class LobbyServer {
     });
 
 
-    eventEmitter.on('clearfromlobbymemory', function(client) {
+    eventEmitter.on('clearFromLobbyMemory', function(client) {
       console.log('logging out this client');
       server.logOutClient(client);
     });
@@ -541,7 +541,7 @@ class LobbyServer {
       // this will be set true once the client responds
       client.respondedKeepAlive = false;
       if (client.connectivity <= 0) {
-        client.emit('clearfromlobbymemory');
+        client.emit('clearFromLobbyMemory');
         server.logOutClient(client);
       }
     }
