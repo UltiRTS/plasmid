@@ -622,29 +622,17 @@ class LobbyServer {
 
 
     // dump the poll as well if the person is in a game
-    let team = [];
 
-    if (ppl.state.room != '') {
-      team = [
-        this.rooms[ppl.state.room].AIs,
-        this.rooms[ppl.state.room].players,
-        this.rooms[ppl.state.room].chickens];
-
-      // console.log(this.rooms[ppl.state.room].AIs);
-      // console.log(this.rooms[ppl.state.room].players);
-      // console.log(this.rooms[ppl.state.room].chickens);
-    }
 
     global.database.getAllNotifications(ppl.state.userID).then((notifications) => {
       // console.log(ppl.state.getState());
       const response = {
-        'usrstats': ppl.state.getState(),
         'games': games,
         'chatsIndex': chatIndex,
-        'team': team,
         'notifications': notifications,
+        'usrstats': ppl.state.getState(),
       };
-      console.log(ppl.state.getState());
+      // console.log(ppl.state.getState());
       ppl.send(JSON.stringify({
         'action': 'stateDump',
         triggeredBy,
@@ -675,7 +663,7 @@ class LobbyServer {
         'polls': this.rooms[battle].getPolls(),
         'battleName': this.rooms[battle].getTitle(),
         'isStarted': this.rooms[battle].checkStarted(),
-        'players': this.rooms[battle].getPlayers(),
+        'players': {'AIs': this.rooms[battle].AIs, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens},
         'map': this.rooms[battle].getMap(),
         'port': this.rooms[battle].getPort(),
         'ip': this.rooms[battle].getResponsibleAutohost(),
