@@ -9,6 +9,7 @@ const Config=require('./config.js').config;
 
 const Database= require('./lib/database');
 global.database=new Database(Config.db);
+const db = new Database(Config.db);
 
 const EventEmitter = require('events');
 global.eventEmitter = new EventEmitter();
@@ -20,4 +21,4 @@ global.eventEmitter = new EventEmitter();
 // eslint-disable-next-line no-unused-vars
 autohostServer=new AutohostManager(Config.autohosts);
 // eslint-disable-next-line no-unused-vars
-lobbyServer=new LobbyServer(Config.port);
+lobbyServer=new LobbyServer(Config.port, db);

@@ -10,6 +10,7 @@ const ChatObj = require('../state/chat');
 
 
 const {clearInterval} = require('timers');
+const {stat} = require('fs');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
@@ -17,53 +18,53 @@ class LobbyServer {
   rooms = {};
   players = {}; // holds all connected clients;
 
-  constructor(port) {
+  constructor(port, database) {
+    this.database = database;
+
     console.log('lobby server started!');
     initLobbyServerNetwork(port);
     const server = this;
-    eventEmitter.on('commandFromClient', function(client, message) {
+    eventEmitter.on('commandFromClient', async function(client, message) {
       // unlloged in, we log it in and check if the client agreed to the contract
       // when registering; if not, we reprompt the contract
       if (!sanityCheckClient()) return;
       if (message['action'] == 'LOGIN') {
-        global.database.authenticate(message['parameters'])
+        server.database.authenticate(message['parameters'])
             .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
       }
-
 
       // logged in, we assume the client has received contract prompt during login, it
       // has to agree to it now to continue. Or, it may continue if it agreed to it previously
       else if ('state' in client && client.state.loggedIn) {
-        global.database.checkBlocked(client.state.username).then((blocked) => {
-          switch (blocked) {
-            case 'no':
-              server.processLoggedClient(client, message);
-              break;
-            case 'regConfirm':
-              if (message['action'] == 'regConfirm') {
-                global.database.confirmReg(client.state.username).then((dbRet) => {
-                  server.processLoggedClient(client, message);
-                });
-              } else {
-                eventEmitter.emit('clearFromLobbyMemory', client);
-              }
-          }
-        });
+        const status = await server.database.checkBlocked(client.state.username);
+        switch (status) {
+          case 'no':
+            server.processLoggedClient(client, message);
+            break;
+          case 'regConfirm':
+            if (message['action'] == 'regConfirm') {
+              server.database.confirmReg(client.state.username).then((dbRet) => {
+                server.processLoggedClient(client, message);
+              });
+            } else {
+              eventEmitter.emit('clearFromLobbyMemory', client);
+            }
+        }
       }
 
       // unregistered, we register, then login with contract prompt
       else if (message['action'] == 'REGISTER') {
-        global.database.checkDup(message['parameters']).then((dup)=>{
-          if (dup) {
-            global.database.authenticate(message['parameters'])
-                .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
-          } else {
-            global.database.register(message['parameters'])
-                .then(function(dbRet) {
-                  loginClientWithLimitsCheck(dbRet);
-                });
-          }
-        });
+        const username = message['parameters']['usr'];
+        const dup = await server.database.checkDup(username);
+        if (dup) {
+          server.database.authenticate(message['parameters'])
+              .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
+        } else {
+          server.database.register(message['parameters'])
+              .then(function(dbRet) {
+                loginClientWithLimitsCheck(dbRet);
+              });
+        }
       }
 
 
@@ -72,23 +73,22 @@ class LobbyServer {
         eventEmitter.emit('clearFromLobbyMemory', client);
       }
 
-      function loginClientWithLimitsCheck(dbRet) {
+      async function loginClientWithLimitsCheck(dbRet) {
         if (!dbRet[0]) {return;}
-        global.database.checkBlocked(message['parameters']['usr']).then((blocked) => {
-          switch (blocked) {
-            case 'regConfirm':
-              global.database.getSignUpContract().then((contract) => {
-                server.clientSendNotice(client, 'regConfirm', contract);
-                loginClient(dbRet);
-              });
-              break;
-            default:
+        const status = await server.database.checkBlocked(message['parameters']['usr']);
+        switch (status) {
+          case 'regConfirm':
+            server.database.getSignUpContract().then((contract) => {
+              server.clientSendNotice(client, 'regConfirm', contract);
               loginClient(dbRet);
-          }
-        });
+            });
+            break;
+          default:
+            loginClient(dbRet);
+        }
       }
 
-      function loginClient(dbRet) {
+      async function loginClient(dbRet) {
         const isLoggedIn = dbRet[0];
         if (isLoggedIn) {
           client.state = new ClientState({
@@ -96,8 +96,8 @@ class LobbyServer {
             accLevel: dbRet[1],
           });
           client.state.login();
-          global.database.getUserID(client.state.username).then((userID) => {
-            client.state.writeUserID(userID);});
+          const userID = await server.database.getUserID(client.state.username);
+          client.state.writeUserID(userID);
 
           // console.log('client authenticated');
           client.connectivity = 10;
@@ -130,7 +130,7 @@ class LobbyServer {
   }
 
 
-  processLoggedClient(client, message) {
+  async processLoggedClient(client, message) {
     const action = message['action'];
 
     switch (action) {
@@ -301,13 +301,9 @@ class LobbyServer {
           break;
         }
         // get the userID of the freund
-        global.database.getUserID(freundtoadd).then((userID) => {
-          global.database.writeNotification(userID, 0, 'freundConfirmation',
-              username+' has requested to be your freund.',
-              {'requestingUser': username}).then(() => {
-            this.stateDump(client, 'ADDFREUND');
-          });
-        });
+        const freundID = await this.database.getUserID(freundtoadd);
+        this.database.writeNotification(freundID, 0,
+            'freundConfirmation', username + ' requested to be ur freined');
         break;
       }
 
@@ -326,40 +322,32 @@ class LobbyServer {
         {
           break;
         }
-        global.database.getUserID(requesterusrname).then((userID) => {
-          global.database.checkSysMsgStatus(idtoconfirm, usrID).then((msgStatus)=>{
-            if (msgStatus == '0') {
-              global.database.confirmSysMsg(idtoconfirm, userID, AcceptNum).then((confirmDict) => {
-                if (AcceptNum == -1) {
-                  return;
-                }
-                switch (confirmDict['cofirmationType']) {
-                  case 'freundConfirmation': {
-                    global.database.insertFreund(requesterusrname, confirmDict['requestingUser'])
-                        .then((frdList) => {
-                          client.overwriteFreund(frdList);
-                          this.stateDump(client, 'CONFIRMSYSMSG');
-                        });
+        // what AcceptNum is used for?
+        const userID = await this.database.getUserID(requesterusrname);
+        if (userID === -1) this.clientSendNotice(client, 'error', 'no such uesr');
+        if (AcceptNum === -1) return;
 
-                    global.database.insertFreund(confirmDict['requestingUser'], requesterusrname).then(() => {
-                      const anotherParty = this.usernames2ClientObj([confirmDict['requestingUser']]);
-                      this.stateDump(anotherParty, 'CONFIRMSYSMSG');
-                    });
-                    break;
-                  }
-                }
-              });
-            }
+        const msgStatus = await this.database.checkSysMsgStatus(idtoconfirm, userID);
+        if (msgStatus === '0') {
+          const confirmDict = this.database.confirmSysMsg(idtoconfirm, userID, AcceptNum);
+          switch (confirmDict['confirmationType']) {
+            case 'freundConfirmation': {
+              const userFriendList = await this.database.insertFreund(idtoconfirm, userID);
+              client.overwriteFreund(userFriendList);
+              this.stateDump(client, 'CONFIRMSYSMSG');
 
-            if (msgStatus == '1') {
-              this.clientSendNotice(client, 'error', 'message already confirmed');
+              const friendFriendList = await this.database.insertFreund(confirmDict['requestingUser'], requesterusrname);
+              const anotherParty = this.usernames2ClientObj([confirmDict['requestingUser']])[0];
+              anotherParty.overwriteFreund(friendFriendList);
+              this.stateDump(anotherParty, 'CONFIRMSYSMSG');
+              break;
             }
-
-            if (msgStatus == '-1') {
-              this.clientSendNotice(client, 'error', 'You already declined!');
-            }
-          });
-        });
+          }
+        } else if (msgStatus === '-1') {
+          this.clientSendNotice(client, 'error', 'You already declined!');
+        } else if (msgStatus === '1') {
+          this.clientSendNotice(client, 'error', 'message already confirmed');
+        }
         break;
       }
 
@@ -635,7 +623,7 @@ class LobbyServer {
       // console.log(this.rooms[ppl.state.room].chickens);
     }
 
-    global.database.getAllNotifications(ppl.state.userID).then((notifications) => {
+    this.database.getAllNotifications(ppl.state.userID).then((notifications) => {
       // console.log(ppl.state.getState());
       const response = {
         'usrstats': ppl.state.getState(),
