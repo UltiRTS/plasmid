@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "knex": "^0.95.11",
+    "objection": "^3.0.1",
     "sqlite3": "^5.0.2",
     "ws": "^8.2.3"
   },
