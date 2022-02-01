@@ -19,6 +19,7 @@ class RoomState {
   id=0;
   password='';
   isStarted=false;
+  errorPlayers=[]; // players who has problems starting
   responsibleAutohost='127.0.0.1';
 
   /**
