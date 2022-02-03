@@ -15,6 +15,7 @@
   "scripts": {
     "lint": "eslint .  --ext .js",
     "test": "mocha",
-    "start": "node main.js"
+    "start": "node main.js",
+    "migrate": "node migration.js"
   }
 }
