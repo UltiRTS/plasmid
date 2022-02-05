@@ -43,6 +43,7 @@ class AutohostManager {
   start(roomObj) {
     // console.log(Array.from(this.clients)[0]);
     const autohostNum=roomObj.mgr;
+    console.log('autohost starting game!');
     // eslint-disable-next-line max-len
     try {
       Array.from(this.clients)[autohostNum].send(JSON.stringify(

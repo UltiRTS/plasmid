@@ -10,7 +10,6 @@ const ChatObj = require('../state/chat');
 
 
 const {clearInterval} = require('timers');
-const {stat} = require('fs');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
@@ -360,7 +359,11 @@ class LobbyServer {
           // eslint-disable-next-line max-len
           this.clientSendNotice(client, 'error', 'invalid battle name to start');
         }
-
+        // check if rooms has this battle
+        if (!this.rooms.hasOwnProperty(battleToStart)) {
+          this.clientSendNotice(client, 'error', 'no such battle');
+          return;
+        }
         // add this cmd to the poll if it's not in the poll
         this.rooms[battleToStart].addPoll(client.state.username, action);
 
@@ -655,6 +658,7 @@ class LobbyServer {
         'map': this.rooms[battle].getMap(),
         'port': this.rooms[battle].getPort(),
         'ip': this.rooms[battle].getResponsibleAutohost(),
+        'id': this.rooms[battle].getID(),
       });
     }
     return games;

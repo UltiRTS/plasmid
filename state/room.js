@@ -66,6 +66,10 @@ class RoomState {
     return this.isStarted;
   }
 
+  getID() {
+    return this.id;
+  }
+
   /**
    *
    * @param {String} playerName
