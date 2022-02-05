@@ -374,6 +374,7 @@ class LobbyServer {
           this.rooms[battleToStart].getHoster()) {
           try {
             // this.rooms[battleToStart].id=this.rooms;
+            console.log('sending command');
             autohostServer.start(this.rooms[battleToStart].configureToStart());
           } catch (e) {
             console.log('NU', e);

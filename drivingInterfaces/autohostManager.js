@@ -32,7 +32,7 @@ class AutohostManager {
 
     eventEmitter.on('connectionFromAutohost', function(clients) {
       server.clients=clients;
-      // console.log(server.clients[0]);
+      console.log(clients);
     });
   }
 
@@ -43,10 +43,11 @@ class AutohostManager {
   start(roomObj) {
     // console.log(Array.from(this.clients)[0]);
     const autohostNum=roomObj.mgr;
+    console.log(autohostNum);
     console.log('autohost starting game!');
     // eslint-disable-next-line max-len
     try {
-      Array.from(this.clients)[autohostNum].send(JSON.stringify(
+      Array.from(this.clients)[this.loadBalance()].send(JSON.stringify(
           {'action': 'startGame', 'parameters': roomObj}));
     } catch (err) {
       console.log('no active autohost!');
@@ -55,6 +56,10 @@ class AutohostManager {
 
   autohostIDtoIP(autohostID) {
     return this.availableautohostIPs[autohostID];
+  }
+
+  loadBalance(autohostIP) {
+    return 0;
   }
 }
 
