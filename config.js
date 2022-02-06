@@ -16,7 +16,10 @@ const config={
   db: 'sqlite',
 };
 
+const debug = true;
+
 module.exports = {
   config,
   knexConf,
+  debug,
 };
