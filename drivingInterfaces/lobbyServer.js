@@ -239,7 +239,7 @@ class LobbyServer {
         }
 
         // if already in a game, leave it
-        if (client.state.room!='') {
+        if (client.state.room!=null) {
           this.rooms[client.state.getRoom()].removePlayer(client.state.username);
         }
 
@@ -395,17 +395,19 @@ class LobbyServer {
         break;
       }
       case 'SETTEAM': { // set team
-        let battleToSetTeam;
-        let team;
-        let AIs;
-        let chickens;
-        let spectators;
+        const battleToSetTeam = client.state.room;
+        if (battleToSetTeam === null) return;
+        let playerToSetTeam;
+        let teamToSet;
+        let isCircuit;
+        let isChicken;
+        let isSpec;
         try {
-          battleToSetTeam = message['parameters']['battleName'];
-          team = message['parameters']['team']; // [{'tom': 'A'}]
-          AIs = message['parameters']['AIs'];
-          chickens = message['parameters']['chickens'];
-          spectators = message['parameters']['spectators'];
+          playerToSetTeam = message['parameters'].player;
+          teamToSet = message['parameters'].team;
+          isCircuit = message['parameters'].isCircuit;
+          isChicken = message['parameters'].isChicken;
+          isSpec = message['parameters'].isSpec;
         } catch (e) {
           console.log(e);
           // eslint-disable-next-line max-len
@@ -421,16 +423,24 @@ class LobbyServer {
         this.rooms[battleToSetTeam].getHoster()) {
           try {
             this.rooms[battleToSetTeam].clearPoll();
-            const players2set = this.rooms[battleToSetTeam].getPlayers();
-            if (players2set.length !== team.length) {
-              this.clientSendNotice(client, 'error', 'invalid team');
-              break;
+            if (teamToSet=='-1') {
+              try {
+                this.rooms[battleToSetTeam].removeAI(playerToSetTeam);
+              }
+              catch {
+                console.log('such ai doesnt exist');
+              }
             }
-
-            this.rooms[battleToSetTeam].pushAIs(AIs);
-            this.rooms[battleToSetTeam].pushChickens(chickens);
-            this.rooms[battleToSetTeam].pushSpectators(spectators);
-            this.rooms[battleToSetTeam].pushPlayers(team);
+            else if (isCircuit) {
+              console.log('setting circuit');
+              this.rooms[battleToSetTeam].setAI(playerToSetTeam, teamToSet);
+            }
+            else if (isChicken) {
+              this.rooms[battleToSetTeam].setChicken(playerToSetTeam, teamToSet);
+            }
+            else {
+              this.rooms[battleToSetTeam].setPlayer(playerToSetTeam, teamToSet, isSpec);
+            }
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
@@ -442,8 +452,6 @@ class LobbyServer {
 
 
         const playerList = this.rooms[battleToSetTeam].getPlayers();
-        const spectatorList = this.rooms[battleToSetTeam].spectators;
-        playerList.push(...spectatorList);
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETTEAM');
@@ -655,7 +663,7 @@ class LobbyServer {
         'polls': this.rooms[battle].getPolls(),
         'battleName': this.rooms[battle].getTitle(),
         'isStarted': this.rooms[battle].checkStarted(),
-        'players': {'AIs': this.rooms[battle].AIs, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens},
+        'players': {'AIs': this.rooms[battle].ais, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens},
         'map': this.rooms[battle].getMap(),
         'port': this.rooms[battle].getPort(),
         'ip': this.rooms[battle].getResponsibleAutohost(),

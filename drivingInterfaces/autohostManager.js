@@ -32,7 +32,7 @@ class AutohostManager {
 
     eventEmitter.on('connectionFromAutohost', function(clients) {
       server.clients=clients;
-      console.log(clients);
+      // console.log(clients);
     });
   }
 

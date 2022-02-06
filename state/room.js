@@ -1,3 +1,5 @@
+/* eslint-disable guard-for-in */
+/* eslint-disable require-jsdoc */
 
 /**
  * @class RoomState
@@ -7,19 +9,13 @@ class RoomState {
   tile='';
   hoster = '';
   map = 'somemap';
-  // format [{'CircuitAI': 'A'}, ...]
-  AIs = [];
-  // format [{'Chicken': 'A'}, ...]
-  chickens = [];
-  // format [{'player1': 'A'}, ...]
-  players = [];
-  // format ['spectator1', ...]
-  spectators = [];
+  ais={}; // {'circuirAI':{'team':'A'}}
+  chickens={};
+  players={}; // format: {'xiaoming':{'isSpec':true,'team':'A','hasmap':true}}
   polls = {};
   id=0;
   password='';
   isStarted=false;
-  errorPlayers=[]; // players who has problems starting
   responsibleAutohost='127.0.0.1';
 
   /**
@@ -31,8 +27,45 @@ class RoomState {
    */
   constructor(hoster='default', map='Comet Catcher Redux', ID=0, password='') {
     this.hoster = hoster;
-    this.players.push({[hoster]: 'A'});
+    this.players[hoster]={'isSpec': false, 'team': 'A', 'hasmap': true};
     this.map=map;
+    this.id=ID;
+    this.password=password;
+  }
+
+  setPlayer(playerName, team, isSpec=false, hasmap=true) {
+    this.players[playerName]={'team': team, 'isSpec': isSpec, 'hasmap': hasmap};
+  }
+
+  // return a list of players
+  getPlayers() {
+    return Object.keys(this.players);
+  }
+
+  removePlayer(playerName) {
+    delete this.players[playerName];
+  }
+
+  setAI(aiName, team) {
+    this.ais[aiName]={'team': team};
+  }
+  setChicken(chickenName, team) {
+    this.chickens[chickenName]={'team': team};
+  }
+  checkStarted() {
+    return this.isStarted;
+  }
+
+  removeAI(aiName) {
+    delete this.ais[aiName];
+  }
+
+  setPlayerMapStatus(playerName, hasMap) {
+    this.players[playerName].hasmap=hasMap;
+  }
+
+  getPlayerCount() {
+    return Object.keys(this.players).length;
   }
 
   // set room title
@@ -48,7 +81,6 @@ class RoomState {
   getPort() {
     return this.id+2000;
   }
-  // get room title
 
   /**
    *
@@ -58,55 +90,11 @@ class RoomState {
     return this.title;
   }
 
-  /**
-   *
-   * @return {bool} if room started
-   */
-  checkStarted() {
-    return this.isStarted;
-  }
 
   getID() {
     return this.id;
   }
 
-  /**
-   *
-   * @param {String} playerName
-   * @param {String} team
-   */
-  setPlayer(playerName, team) {
-    // check if the player is already in the room
-    if (this.isPlayerInRoom(playerName)) {
-      // if the player is in the room, set the team
-      // eslint-disable-next-line max-len
-      this.players.find((player) => player[playerName] === team)[playerName] = team;
-    } else {
-      this.players.push({[playerName]: team});
-    }
-  }
-
-  // check if the player is already in the room
-  /**
-   * @param {String} playerName
-   * @return {boolean} true if the player is already in the room
-   */
-  isPlayerInRoom(playerName) {
-    return this.players.some((player) => Object.keys(player)[0] === playerName);
-  }
-
-  // get player list
-  /**
-   * @return {Array} list of players
-   *
-   */
-  getPlayers() {
-    const playerList=[];
-    for (const player of this.players) {
-      playerList.push(Object.keys(player)[0]);
-    }
-    return playerList;
-  }
 
   // set responsible autohost
   /**
@@ -172,17 +160,6 @@ class RoomState {
     }
   }
 
-  // remove player
-  /**
-   *
-   * @param {String} playerName to be removed
-   */
-  removePlayer(playerName) {
-    // eslint-disable-next-line max-len
-    const targetIndex = this.players.findIndex((player) => playerName in player);
-    if (targetIndex !== undefined) this.players.splice(targetIndex, 1);
-  }
-
   /**
    *
    * @param {String} passwd
@@ -200,115 +177,10 @@ class RoomState {
     return this.hoster;
   }
 
-
-  /**
-   *
-   * @param {dict} team a dict of the AIs{Circuit1: 'A', Circuit2: 'B'}
-   */
-  setAI(team) {
-    for (const AI of this.AIs) {
-      this.AIs.push({CircuitAI: AI});
-    }
-  }
-
-  /**
-   *
-   * @param {object} ai
-   * @return {boolean}
-   */
-  checkAIFormat(ai) {
-    return Object.keys(ai)[0] === 'CircuitAI';
-  }
-
-  /**
-   *
-   * @param {object} chicken
-   * @return {boolean}
-   */
-  checkChickenFormat(chicken) {
-    return Object.keys(chicken)[0] === 'Chicken';
-  }
-
   getMap() {
     return this.map;
   }
-  /**
-   *
-   * @param {String} spectator
-   * @return {boolean}
-   */
-  checkSpectator(spectator) {
-    return typeof(spectator) === 'string';
-  }
 
-  /**
-   *
-   * @param {object} AIs
-   */
-  pushAIs(AIs) {
-    for (const ai of AIs) {
-      if (this.checkAIFormat(ai)) {
-        this.AIs.push(ai);
-      }
-    }
-  }
-
-  /**
-   *
-   * @param {object} chickens
-   */
-  pushChickens(chickens) {
-    for (const chick of chickens) {
-      if (this.checkChickenFormat(chick)) this.chickens.push(chick);
-    }
-  }
-
-  /**
-   *
-   * @param {object} spectators
-   */
-  pushSpectators(spectators) {
-    for (const spec of spectators) {
-      if (this.checkSpectator(spec)) this.spectators.push(spec);
-    }
-  }
-
-  /**
-   *
-   * @param {object} players
-   */
-  pushPlayers(players) {
-    this.players = this.players.concat(players);
-  }
-
-  // get AI dict
-
-  /**
-   * @return {dict} ai dict
-   */
-  getAI() {
-    const returningAI=[];
-    for (let i=0; i<this.AIs.length; i++) {
-      returningAI.push(Object.keys(this.AIs[i])[0]);
-    }
-    return returningAI;
-  }
-
-  /**
-   *
-   * @param {String} team
-   */
-  addChicken(team) {
-    this.chickens.push({Chicken: team});
-  }
-
-  /**
-   *
-   * @param {String} spectatorName
-   */
-  addSpectator(spectatorName) {
-    this.spectators.push(spectatorName);
-  }
 
   /**
    *
@@ -316,26 +188,6 @@ class RoomState {
    */
   setMap(mapName) {
     this.map = mapName;
-  }
-
-  // get number of players
-  /**
-   * @return {int} number of players
-   */
-  getPlayerCount() {
-    return this.players.length;
-  }
-
-  /**
-   *
-   * @return {dict} a dict of player teams
-   */
-  getPlayerTeam() {
-    const returningDict={};
-    for (const player of this.players) {
-      returningDict[Object.keys(player)[0]]=Object.values(player)[0];
-    }
-    return returningDict;
   }
 
   /**
@@ -353,8 +205,6 @@ class RoomState {
     this.isStarted=true;
     this.poll={};
 
-    let count = 0;
-
     const engineLaunchObj = {};
     engineLaunchObj['id']=this.ID;
     engineLaunchObj['mgr']=this.responsibleAutohost;
@@ -363,33 +213,56 @@ class RoomState {
 
     const teamMapping = {};
     let teamCount = 0;
-    for (const player of this.players) {
-      const team = player[Object.keys(player)[0]];
+
+    // the below discoveres new letters and assign those with a number
+    for (const player in this.players) {
+      const team = this.players[player].team;
       if (!(team in teamMapping)) {
         teamMapping[team] = teamCount;
         teamCount++;
       }
     }
 
-    for (const player of this.players) {
-      const playerName = Object.keys(player)[0];
-      if (playerName === 'CircuitAI' || playerName === 'Chicken') continue;
+    for (const player in this.ais) {
+      const team = this.ais[player].team;
+      if (!(team in teamMapping)) {
+        teamMapping[team] = teamCount;
+        teamCount++;
+      }
+    }
 
-      const playerId = playerName + count;
-      engineLaunchObj.team[playerId] = {
+    for (const player in this.chickens) {
+      const team = this.chickens[player].team;
+      if (!(team in teamMapping)) {
+        teamMapping[team] = teamCount;
+        teamCount++;
+      }
+    }
+
+    let count = 0;
+    // the below handles players including spectators
+    for (const player in this.players) {
+      const playerName = player;
+      let team;
+      if (this.players[player].isSpec) {
+        team = 0;
+      } else {
+        team = teamMapping[this.players[player].team];
+      }
+
+      engineLaunchObj.team[playerName] = {
         index: count,
         isAI: false,
         isChicken: false,
-        isSpectator: false,
+        isSpectator: this.players[player].isSpec,
         isLeader: playerName == this.hoster,
-        team: teamMapping[player[playerName]] || 0,
+        team: team,
       };
       count++;
     }
-
-    for (const AI of this.AIs) {
-      const AIName = Object.keys(AI)[0];
-      if (AIName !== 'CircuitAI') continue;
+    // the below handles AI configs
+    for (const AI in this.ais) {
+      const AIName = AI;
 
       const AIId = AIName + count;
       engineLaunchObj.team[AIId] = {
@@ -398,37 +271,21 @@ class RoomState {
         isChicken: false,
         isSpectator: false,
         isLeader: false,
-        team: teamMapping[AI[AIName]] || 0,
+        team: teamMapping[this.ais[ai].team],
       };
       count++;
     }
 
-    for (const Chicken of this.chickens) {
-      const ChickenName = Object.keys(Chicken)[0];
-      if (ChickenName !== 'Chicken') continue;
-
-      const ChickenId = ChickenName + count;
-      engineLaunchObj.team[ChickenId] = {
+    for (const chicken in this.chickens) {
+      const chickenName = chicken;
+      const chickenId = chickenName + count;
+      engineLaunchObj.team[chickenId] = {
         index: count,
         isAI: false,
         isChicken: true,
         isSpectator: false,
         isLeader: false,
-        team: teamMapping[Chicken[ChickenName]] || 0,
-      };
-      count++;
-    }
-
-    for (const spectator of this.spectators) {
-      const spectatorId = spectator + count;
-      engineLaunchObj.team[spectatorId] = {
-        index: count,
-        isAI: false,
-        isChicken: false,
-        isSpectator: true,
-        isLeader: false,
-        // always team 0 for spectators
-        team: 0,
+        team: teamMapping[this.chickens[chicken].team],
       };
       count++;
     }

@@ -3,7 +3,7 @@ class ClientState {
   loggedIn = false;
   accLevel = '';
   chats = [];
-  room = '';
+  room = null;
   team = '';
   username = '';
   freunds={};
@@ -50,7 +50,7 @@ class ClientState {
   }
 
   leaveRoom() {
-    this.room = '';
+    this.room = null;
   }
 
   joinTeam(_team) {
