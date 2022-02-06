@@ -1,14 +1,15 @@
-const Database = require('../lib/database');
-const assert = require('assert');
+const {knexConf} = require('../config');
+const {DataManager} = require('../lib/dataManager');
+const {User} = require('../lib/models');
 
+const dbm = new DataManager(knexConf);
 
-describe('database check', ()=> {
-  const db = new Database('sqlite');
-  describe('block check', ()=>{
-    it('should not be block', async ()=>{
-      const res = await db.checkBlocked('test');
-      assert.equal(res, 'no');
-    });
-  });
+dbm.register('hello', 'pwd').then((res)=>{
+  console.log(res);
+}).catch((e)=>{
+  console.log(e);
 });
 
+dbm.queryUser('hello').then((uesr)=>{
+  console.log(User);
+});
