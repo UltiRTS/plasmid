@@ -60,6 +60,10 @@ class RoomState {
     delete this.ais[aiName];
   }
 
+  removeChicken(chickenName) {
+    delete this.chickens[chickenName];
+  }
+
   setPlayerMapStatus(playerName, hasMap) {
     this.players[playerName].hasmap=hasMap;
   }

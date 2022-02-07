@@ -423,7 +423,7 @@ class LobbyServer {
         this.rooms[battleToSetTeam].getHoster()) {
           try {
             this.rooms[battleToSetTeam].clearPoll();
-            if (teamToSet=='-1') {
+            if (teamToSet=='-1'&&isCircuit) {
               try {
                 this.rooms[battleToSetTeam].removeAI(playerToSetTeam);
               }
@@ -433,13 +433,37 @@ class LobbyServer {
             }
             else if (isCircuit) {
               console.log('setting circuit');
-              this.rooms[battleToSetTeam].setAI(playerToSetTeam, teamToSet);
+              try {
+                this.rooms[battleToSetTeam].setAI(playerToSetTeam, teamToSet);}
+              catch {}
+            }
+
+            if (teamToSet=='-1'&&isChicken) {
+              try {
+                this.rooms[battleToSetTeam].removeChicken(playerToSetTeam);
+              }
+              catch {
+                console.log('such ai doesnt exist');
+              }
             }
             else if (isChicken) {
-              this.rooms[battleToSetTeam].setChicken(playerToSetTeam, teamToSet);
+              console.log('setting circuit');
+              try {
+                this.rooms[battleToSetTeam].setChicken(playerToSetTeam, teamToSet);}
+              catch {}
             }
-            else {
-              this.rooms[battleToSetTeam].setPlayer(playerToSetTeam, teamToSet, isSpec);
+            if (!isCircuit&&!isChicken&&teamToSet=='-1') {
+              try {
+                this.rooms[battleToSetTeam].removePlayer(playerToSetTeam);
+              }
+              catch {
+                console.log('such ppl doesnt exist');
+              }
+            }
+            else if (!isCircuit&&!isChicken&&teamToSet!='-1') {
+              try {
+                this.rooms[battleToSetTeam].setPlayer(playerToSetTeam, teamToSet);}
+              catch {}
             }
           } catch (e) {
             console.log('NU', e);
