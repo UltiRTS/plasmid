@@ -1,4 +1,3 @@
-const {createNoSubstitutionTemplateLiteral} = require('typescript');
 const {knexConf} = require('../config');
 const {DataManager} = require('../lib/dataManager');
 
@@ -20,15 +19,31 @@ const main = async () => {
       'confirmation', 'friendRequest', '{id: 2}');
   console.log(res);
 
+  res = await dbm.getConfirmation('hello');
+  console.log(res);
+
   // related query
   res = await dbm.addFriend('hello', 'world');
   console.log(res);
 
+  res = await dbm.getFriends('hello');
+  console.log(res);
+
+  res = await dbm.queryUser('hello');
+  console.log(res);
+
+  res.accessLevel = 1;
+  res.isBlocked= false;
+  res.exp = 0;
+
+  res = await dbm.setUser(res);
+  console.log(res);
+
+  res = await dbm.queryUser('hello');
+  console.log(res);
 
   // remove waste
   res = await dbm.removeUser('hello');
-  console.log(res);
-  res = await dbm.removeUser('world');
   console.log(res);
 
   dbm.destroy();
