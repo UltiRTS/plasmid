@@ -22,9 +22,9 @@ async function createSchema() {
     await knex.schema.createTable('friends', (table) => {
       table.increments();
       table.integer('userId').references('users.id').notNullable()
-          .onDelete('cascade');
+          .onDelete('CASCADE');
       table.integer('friendId').references('users.id').notNullable()
-          .onDelete('cascade');
+          .onDelete('CASCADE');
     });
 
     console.log('Created friends table');
@@ -33,7 +33,8 @@ async function createSchema() {
   if (! await knex.schema.hasTable('conformations')) {
     await knex.schema.createTable('confirmations', (table) => {
       table.increments();
-      table.integer('userId').references('users.id').notNullable();
+      table.integer('userId').references('users.id')
+          .notNullable().onDelete('CASCADE');
       table.string('type', 255).notNullable();
       table.string('text', 255).notNullable();
       table.string('parameters', 255);
