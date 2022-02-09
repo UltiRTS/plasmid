@@ -28,6 +28,10 @@ class LobbyServer {
       // when registering; if not, we reprompt the contract
       if (!sanityCheckClient()) return;
       if (message['action'] == 'LOGIN') {
+        if (server.players.hasOwnProperty(message.parameters.username)) {
+          server.clientSendNotice(client, 'error', 'Username already logged in');
+          return;
+        }
         server.database.authenticate(message['parameters'])
             .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
       }
@@ -223,7 +227,8 @@ class LobbyServer {
         // remove this user from the chat's list of users
         client.state.leaveChat(chatToLeave);
         this.stateDump(client, 'LEAVECHAT');
-        for (const ppl of this.chats[chatToLeave].clients) {
+        const pplObjs=this.usernames2ClientObj(this.chats[chatToLeave].clients);
+        for (const ppl of pplObjs) {
           this.stateDump(ppl, 'LEAVECHAT');
         }
         break;
@@ -569,7 +574,7 @@ class LobbyServer {
         server.logOutClient(client);
       }
     }
-    return setInterval(checkPing, 30000);
+    return setInterval(checkPing, 1000);
   }
 
 
@@ -603,28 +608,16 @@ class LobbyServer {
     // remove client from all chats
     try {
       for (const chat of client.state.joinedChats) {
-        this.processLoggedClientCmd('LEAVECHAT', client, {'chatName': chat});
+        this.processLoggedClientCmd(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
       }
     } catch (e) {
       console.log('client has no active chats');
     }
 
-    // if the client is present in this.chats.clients, remove it
-    for (const chat in this.chats) {
-      if (this.chats[chat].clients.includes(client.state.username)) {
-        this.chats[chat].clients.splice(this.chats[chat].clients.indexOf(client.state.username), 1);
-      }
-      else {
-        console.log('chats dont have such client');
-      }
-    }
-
-
     try {
       // remove client from all battles
-      this.processLoggedClientCmd('LEAVEGAME', client, {
-        'battleName': client.state.room,
-      });}
+      this.processLoggedClientCmd( client, {'action ': 'LEAVEBATTLE', 'parameters': {'battleName': client.state.battle}});
+    }
     catch (e) {
       console.log('client has no active battles');
     }
