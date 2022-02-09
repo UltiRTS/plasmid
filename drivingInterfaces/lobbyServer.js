@@ -10,6 +10,8 @@ const ChatObj = require('../state/chat');
 
 
 const {clearInterval} = require('timers');
+const {isThisTypeNode} = require('typescript');
+const {ConstraintViolationError} = require('objection');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
@@ -17,8 +19,13 @@ class LobbyServer {
   rooms = {};
   players = {}; // holds all connected clients;
 
-  constructor(port, database) {
+  constructor(port, database, dataManager) {
     this.database = database;
+    this.dataManager = dataManager;
+    // uncomment below for deving purposes
+    const {knexConf} = require('../config');
+    const {DataManager} = require('../lib/dataManager');
+    this.dataManager = new DataManager(knexConf);
 
     console.log('lobby server started!');
     initLobbyServerNetwork(port);
@@ -28,8 +35,34 @@ class LobbyServer {
       // when registering; if not, we reprompt the contract
       if (!sanityCheckClient()) return;
       if (message['action'] == 'LOGIN') {
-        server.database.authenticate(message['parameters'])
-            .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
+        const username = message['parameters']['usr'];
+        const password = message['parameters']['passwd'];
+        server.dataManager.login(username, password).then((res) => {
+          console.log('logining');
+          const user = server.dataManager.queryUser(username);
+          // TODO: check user status blow
+          if (res === 'verified') {
+            client.state = new ClientState({
+              username,
+              accLevel: user.accessLevel,
+            });
+            client.state.login();
+            client.state.writeUserID(user.id);
+
+            client.connectivity = 10;
+            client.respondedKeepAlive = true;
+            client.keepAlive = server.processPing(client);
+
+            server.players[client.state.username] = client;
+
+            server.stateDump(client, 'LOGIN');
+            console.log('logged in');
+          }
+        }).catch((e)=>{
+          server.clientSendNotice(client, 'error', 'Wrong username or password');
+        });
+        // server.database.authenticate(message['parameters'])
+        //    .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
       }
 
       // logged in, we assume the client has received contract prompt during login, it
@@ -54,16 +87,44 @@ class LobbyServer {
       // unregistered, we register, then login with contract prompt
       else if (message['action'] == 'REGISTER') {
         const username = message['parameters']['usr'];
-        const dup = await server.database.checkDup(username);
-        if (dup) {
-          server.database.authenticate(message['parameters'])
-              .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
-        } else {
-          server.database.register(message['parameters'])
-              .then(function(dbRet) {
-                loginClientWithLimitsCheck(dbRet);
-              });
-        }
+        const password = message['parameters']['passwd'];
+
+        server.dataManager.register(username, password).then(async (res) => {
+          console.log(res);
+          if (res === 'registered') {
+            const user = await server.dataManager.queryUser(username);
+            // TODO: check user status blow
+            client.state = new ClientState({
+              username,
+              accLevel: user.accessLevel,
+            });
+            client.state.login();
+            client.state.writeUserID(user.id);
+
+            client.connectivity = 10;
+            client.respondedKeepAlive = true;
+            client.keepAlive = server.processPing(client);
+
+            server.players[client.state.username] = client;
+
+            server.stateDump(client, 'LOGIN');
+          } else {
+            server.clientSendNotice(client, 'error', res);
+          }
+        }).catch((e)=>{
+          server.clientSendNotice(client, 'error', 'Username already exists');
+        });
+
+        // const dup = await server.database.checkDup(username);
+        // if (dup) {
+        //  server.database.authenticate(message['parameters'])
+        //      .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
+        // } else {
+        //  server.database.register(message['parameters'])
+        //      .then(function(dbRet) {
+        //        loginClientWithLimitsCheck(dbRet);
+        //      });
+        // }
       }
 
 

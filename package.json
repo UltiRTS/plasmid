@@ -16,6 +16,7 @@
     "lint": "eslint .  --ext .js",
     "test": "mocha",
     "start": "node main.js",
-    "migrate": "node migration.js"
+    "migrate": "node migration.js",
+    "testall": "rm test.db && npm run migrate && node ./integrateTests/main.test.js"
   }
 }
