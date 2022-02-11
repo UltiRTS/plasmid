@@ -43,6 +43,45 @@ async function createSchema() {
 
     console.log('Created confirmations table');
   }
+  if (! await knex.schema.hasTable('settings')) {
+    await knex.schema.createTable('settings', (table) => {
+      table.increments();
+      table.string('name', 255).notNullable();
+      table.string('type', 255).notNullable();
+      table.string('describe', 255).notNullable();
+      table.integer('value').notNullable();
+    });
+
+    console.log('Created settings table');
+  }
+
+  if (! await knex.schema.hasTable('chats')) {
+    await knex.schema.createTable('chats', (table) => {
+      table.increments();
+      table.string('name', 255).notNullable();
+      table.string('type', 255).notNullable();
+      table.string('describe', 255);
+      table.string('password', 255);
+    });
+
+    console.log('Created chats table');
+  }
+
+  if (! await knex.schema.hasTable('chatHistory')) {
+    await knex.schema.createTable('chatHistory', (table) => {
+      table.increments();
+      table.integer('userId').references('users.id')
+          .notNullable().onDelete('CASCADE');
+      table.integer('chatId').references('chats.id')
+          .notNullable().onDelete('CASCADE');
+      table.string('channel', 255).notNullable();
+      table.string('content', 255).notNullable();
+      // ISO String format
+      table.string('createAt', 255).notNullable();
+    });
+
+    console.log('Created chat history table');
+  }
 }
 
 createSchema().then(() => {
