@@ -7,13 +7,6 @@ const Config=require('./config.js').config;
 // console.log(Config)
 // global.config=Config.config
 
-const Database= require('./lib/database');
-
-
-global.database=new Database(Config.db);
-const db = new Database(Config.db);
-
-
 const {knexConf} = require('./config');
 const {DataManager} = require('./lib/dataManager');
 const dataManager = new DataManager(knexConf);
@@ -28,4 +21,4 @@ global.eventEmitter = new EventEmitter();
 // eslint-disable-next-line no-unused-vars
 autohostServer=new AutohostManager(Config.autohosts);
 // eslint-disable-next-line no-unused-vars
-lobbyServer=new LobbyServer(Config.port, db, dataManager);
+lobbyServer=new LobbyServer(Config.port, dataManager);

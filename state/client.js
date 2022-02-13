@@ -13,9 +13,11 @@ class ClientState {
   constructor(options={
     username: '',
     accLevel: '',
+    id: -1,
   }) {
     this.username = options.username;
     this.accLevel = options.accLevel;
+    this.id = options.id;
     this.loggedIn = true;
   }
 

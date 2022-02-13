@@ -6,12 +6,9 @@ const {initLobbyServerNetwork} = require('../lib/lobbyServerNetwork');
 // const ClientState = require('./clientState').default;
 const {ClientState} = require('../state/client');
 const {RoomState} = require('../state/room');
-const ChatObj = require('../state/chat');
 
 
 const {clearInterval} = require('timers');
-const {isThisTypeNode} = require('typescript');
-const {ConstraintViolationError} = require('objection');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
@@ -19,8 +16,7 @@ class LobbyServer {
   rooms = {};
   players = {}; // holds all connected clients;
 
-  constructor(port, database, dataManager) {
-    this.database = database;
+  constructor(port, dataManager) {
     this.dataManager = dataManager;
     // uncomment below for deving purposes
     const {knexConf} = require('../config');
@@ -35,63 +31,63 @@ class LobbyServer {
       // when registering; if not, we reprompt the contract
       if (!sanityCheckClient()) return;
       if (message['action'] == 'LOGIN') {
-<<<<<<< HEAD
         const username = message['parameters']['usr'];
         const password = message['parameters']['passwd'];
         server.dataManager.login(username, password).then((res) => {
           console.log('logining');
-          const user = server.dataManager.queryUser(username);
-          // TODO: check user status blow
-          if (res === 'verified') {
-            client.state = new ClientState({
-              username,
-              accLevel: user.accessLevel,
-            });
-            client.state.login();
-            client.state.writeUserID(user.id);
+          server.dataManager.queryUser(username).then((user)=>{
+            console.log(user);
+            server.dataManager.regConfirmed(user.username).then((confirmed) => {
+              if (! confirmed) {
+                server.clientSendNotice(client, 'warning', 'account not confirmed');
+              } else if (res === 'verified') {
+                client.state = new ClientState({
+                  username,
+                  accLevel: user.accessLevel,
+                  id: user.id,
+                });
 
-            client.connectivity = 10;
-            client.respondedKeepAlive = true;
-            client.keepAlive = server.processPing(client);
+                client.state.login();
 
-            server.players[client.state.username] = client;
+                client.connectivity = 10;
+                client.respondedKeepAlive = true;
+                client.keepAlive = server.processPing(client);
 
-            server.stateDump(client, 'LOGIN');
-            console.log('logged in');
-          }
+                server.players[client.state.username] = client;
+
+                server.stateDump(client, 'LOGIN');
+                console.log('logged in');
+              }
+            }).catch((err) => {throw (err);});
+          }).catch((e)=>{
+            throw e;
+          });
         }).catch((e)=>{
           server.clientSendNotice(client, 'error', 'Wrong username or password');
         });
         // server.database.authenticate(message['parameters'])
         //    .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
-=======
-        if (server.players.hasOwnProperty(message.parameters.username)) {
-          server.clientSendNotice(client, 'error', 'Username already logged in');
-          return;
-        }
-        server.database.authenticate(message['parameters'])
-            .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
->>>>>>> bcd8ce3fc13c40fb5d5b13d1e2015e333cb6e86c
       }
 
       // logged in, we assume the client has received contract prompt during login, it
       // has to agree to it now to continue. Or, it may continue if it agreed to it previously
-      else if ('state' in client && client.state.loggedIn) {
-        const status = await server.database.checkBlocked(client.state.username);
-        switch (status) {
-          case 'no':
-            server.processLoggedClient(client, message);
-            break;
-          case 'regConfirm':
-            if (message['action'] == 'regConfirm') {
-              server.database.confirmReg(client.state.username).then((dbRet) => {
-                server.processLoggedClient(client, message);
-              });
-            } else {
-              eventEmitter.emit('clearFromLobbyMemory', client);
-            }
-        }
-      }
+      // REMOVE: needs to implement in case LOGIN
+      // else if ('state' in client && client.state.loggedIn) {
+      //   const status = await server.database.checkBlocked(client.state.username);
+      //   switch (status) {
+      //     case 'no':
+      //       server.processLoggedClient(client, message);
+      //       break;
+      //     case 'regConfirm':
+      //       if (message['action'] == 'regConfirm') {
+      //         server.database.confirmReg(client.state.username).then((dbRet) => {
+      //           server.processLoggedClient(client, message);
+      //         });
+      //       } else {
+      //         eventEmitter.emit('clearFromLobbyMemory', client);
+      //       }
+      //   }
+      // }
 
       // unregistered, we register, then login with contract prompt
       else if (message['action'] == 'REGISTER') {
@@ -102,25 +98,20 @@ class LobbyServer {
           console.log(res);
           if (res === 'registered') {
             const user = await server.dataManager.queryUser(username);
-            // TODO: check user status blow
+            // add confirmation
+            await server.dataManager.addConfirmation(user.username, '', 'register', '');
             client.state = new ClientState({
               username,
               accLevel: user.accessLevel,
+              id: user.id,
             });
-            client.state.login();
-            client.state.writeUserID(user.id);
 
-            client.connectivity = 10;
-            client.respondedKeepAlive = true;
-            client.keepAlive = server.processPing(client);
-
-            server.players[client.state.username] = client;
-
-            server.stateDump(client, 'LOGIN');
+            server.stateDump(client, 'REGISTER');
           } else {
             server.clientSendNotice(client, 'error', res);
           }
         }).catch((e)=>{
+          console.log(e);
           server.clientSendNotice(client, 'error', 'Username already exists');
         });
 
@@ -140,46 +131,6 @@ class LobbyServer {
       // garbage data, disconnect
       else {
         eventEmitter.emit('clearFromLobbyMemory', client);
-      }
-
-      async function loginClientWithLimitsCheck(dbRet) {
-        if (!dbRet[0]) {return;}
-        const status = await server.database.checkBlocked(message['parameters']['usr']);
-        switch (status) {
-          case 'regConfirm':
-            server.database.getSignUpContract().then((contract) => {
-              server.clientSendNotice(client, 'regConfirm', contract);
-              loginClient(dbRet);
-            });
-            break;
-          default:
-            loginClient(dbRet);
-        }
-      }
-
-      async function loginClient(dbRet) {
-        const isLoggedIn = dbRet[0];
-        if (isLoggedIn) {
-          client.state = new ClientState({
-            username: message['parameters']['usr'],
-            accLevel: dbRet[1],
-          });
-          client.state.login();
-          const userID = await server.database.getUserID(client.state.username);
-          client.state.writeUserID(userID);
-
-          // console.log('client authenticated');
-          client.connectivity = 10;
-          client.respondedKeepAlive = true;
-          client.keepAlive = server.processPing(client);
-
-          server.players[client.state.username] = client;
-
-          server.stateDump(client, 'LOGIN');
-        }
-        else {
-          server.clientSendNotice(client, 'errorLogin', 'Incorrect credentials');
-        }
       }
 
       function sanityCheckClient() {
@@ -217,7 +168,14 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid chat name');
         }
 
-        if (!(chatToJoin in this.chats)) this.chats[chatToJoin] = new ChatObj(chatToJoin);
+        if (!(chatToJoin in this.chats))
+        {
+          const chat = await this.dataManager.createChat(chatToJoin, 'chat', '', '');
+          this.chats[chatToJoin] = {
+            chat,
+            clients: [],
+          };
+        }
         // console.log(Object.keys(this.chats));
 
         // if the client is not in that chat, push it
@@ -240,23 +198,31 @@ class LobbyServer {
       }
       case 'SAYCHAT': {
         let channelName;
+        let chatName;
         let chatMsg;
         try {
-          channelName = message['parameters']['chatName'];
+          chatName = message['parameters']['chatName'];
           chatMsg = message['parameters']['msg'];
+          channelName = message['parameters']['channelName'];
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
         // console.log(channelName);
         // console.log(this.chats);
         // console.log(this.chats[channelName].clients);
-        if (channelName in this.chats && this.chats[channelName].clients.includes(client.state.username)) {
-          this.chats[channelName].recordChat(client.state.username, channelName, chatMsg);
+        if (chatName in this.chats && this.chats[chatName].clients.includes(client.state.username)) {
+          await this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.id, chatMsg, channelName);
+
           const pplObjs=this.usernames2ClientObj(this.chats[channelName].clients);
           for (const ppl of pplObjs) {
             // now let everyone else know
             // console.log('sending chat to ' + ppl.state.username);
-            ppl.state.writeChatMsg({'channelName': channelName, 'author': client.state.username, 'msg': chatMsg});
+            ppl.state.writeChatMsg({
+              channelName,
+              'author': client.state.username,
+              'msg': chatMsg,
+              chatName,
+            });
             this.stateDump(ppl, 'SAYCHAT');
             // console.log(ppl.state.chatMsg);
 
@@ -359,64 +325,39 @@ class LobbyServer {
         this.stateDump(client, 'LEAVEGAME');
       }
       case 'ADDFREUND': {
-        let freundtoadd=false;
+        let freundtoadd;
         let username;
         try {
           freundtoadd = message['parameters']['freund'];
           username = client.state.username;
+          const addRes = await this.dataManager.addFriend(username, freundtoadd);
+          if (addRes === 'added') {
+            await this.dataManager.addConfirmation(freundtoadd, username, 'friend', '');
+          }
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid freund');
         } // hackery going on
-        if (!freundtoadd) {
-          break;
-        }
-        // get the userID of the freund
-        const freundID = await this.database.getUserID(freundtoadd);
-        this.database.writeNotification(freundID, 0,
-            'freundConfirmation', username + ' requested to be ur freined');
         break;
       }
 
       case 'CONFIRMSYSMSG': {
-        let idtoconfirm;
-        let requesterusrname = false;
-        let AcceptNum;
+        let confirmationId;
+        let acceptOrNot = false;
+        let username;
         try {
-          idtoconfirm = message['parameters']['id'];
-          AcceptNum = message['parameters']['AcceptNum'];
-          requesterusrname = client.state.username;
-        } catch (e) {
-          this.clientSendNotice(client, 'error', 'invalid confirmation');
-        }
-        if (!requesterusrname)
-        {
-          break;
-        }
-        // what AcceptNum is used for?
-        const userID = await this.database.getUserID(requesterusrname);
-        if (userID === -1) this.clientSendNotice(client, 'error', 'no such uesr');
-        if (AcceptNum === -1) return;
-
-        const msgStatus = await this.database.checkSysMsgStatus(idtoconfirm, userID);
-        if (msgStatus === '0') {
-          const confirmDict = this.database.confirmSysMsg(idtoconfirm, userID, AcceptNum);
-          switch (confirmDict['confirmationType']) {
-            case 'freundConfirmation': {
-              const userFriendList = await this.database.insertFreund(idtoconfirm, userID);
-              client.overwriteFreund(userFriendList);
-              this.stateDump(client, 'CONFIRMSYSMSG');
-
-              const friendFriendList = await this.database.insertFreund(confirmDict['requestingUser'], requesterusrname);
-              const anotherParty = this.usernames2ClientObj([confirmDict['requestingUser']])[0];
-              anotherParty.overwriteFreund(friendFriendList);
-              this.stateDump(anotherParty, 'CONFIRMSYSMSG');
-              break;
+          confirmationId = message['parameters']['id'];
+          acceptOrNot = message['parameters']['AcceptNum'];
+          username = client.state.username;
+          if (client.state.loggedIn) {
+            if (acceptOrNot) {
+              const res =
+                await this.dataManager.confirm(username, confirmationId);
+              if (res === 'yes') this.clientSendNotice(client, 'success', 'confirmed');
+              else this.clientSendNotice(client, 'error', res);
             }
           }
-        } else if (msgStatus === '-1') {
-          this.clientSendNotice(client, 'error', 'You already declined!');
-        } else if (msgStatus === '1') {
-          this.clientSendNotice(client, 'error', 'message already confirmed');
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'invalid confirmation');
         }
         break;
       }
@@ -705,14 +646,11 @@ class LobbyServer {
 
 
     // dump the poll as well if the person is in a game
-
-
-    this.database.getAllNotifications(ppl.state.userID).then((notifications) => {
-      // console.log(ppl.state.getState());
+    this.dataManager.getConfirmation(ppl.state.username).then((confirmations) => {
       const response = {
         'games': games,
         'chatsIndex': chatIndex,
-        'notifications': notifications,
+        'notifications': confirmations,
         'usrstats': ppl.state.getState(),
       };
       // console.log(ppl.state.getState());
