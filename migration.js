@@ -1,5 +1,7 @@
 const {knexConf} = require('./config');
 const knex = require('knex')(knexConf);
+const {DataManager} = require('./lib/dataManager');
+
 
 /**
  *
@@ -82,10 +84,27 @@ async function createSchema() {
 
     console.log('Created chat history table');
   }
+  knex.destroy();
+
+  const dbm = new DataManager(knexConf);
+  await dbm.register('test4', 'testpassword');
+  console.log('Registered test4');
+  await dbm.register('test', 'testpassword');
+  console.log('Registered test');
+  await dbm.addConfirmation('test4', '', 'register', '');
+  await dbm.addConfirmation('test', '', 'register', '');
+  let res = await dbm.confirm('test4', 1);
+  console.log(res);
+  res = await dbm.confirm('test', 2);
+  console.log(res);
+
+  dbm.destroy();
 }
 
 createSchema().then(() => {
   knex.destroy();
   console.log('Done');
+}).catch((e)=>{
+  console.log(e);
 });
 
