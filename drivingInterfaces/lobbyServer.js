@@ -51,7 +51,7 @@ class LobbyServer {
 
                 client.connectivity = 10;
                 client.respondedKeepAlive = true;
-                client.keepAlive = server.processPing(client);
+                // client.keepAlive = server.processPing(client);
 
                 server.players[client.state.username] = client;
 
@@ -125,11 +125,9 @@ class LobbyServer {
         //        loginClientWithLimitsCheck(dbRet);
         //      });
         // }
-      }
-
-
-      // garbage data, disconnect
-      else {
+      } else if (client.state.loggedIn) {
+        server.processLoggedClient(client, message);
+      } else {
         eventEmitter.emit('clearFromLobbyMemory', client);
       }
 
@@ -201,9 +199,9 @@ class LobbyServer {
         let chatName;
         let chatMsg;
         try {
-          chatName = message['parameters']['chatName'];
+          chatName = message['parameters']['chatName'] || 'global';
           chatMsg = message['parameters']['msg'];
-          channelName = message['parameters']['channelName'];
+          channelName = message['parameters']['channelName'] || 'default';
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
@@ -213,7 +211,7 @@ class LobbyServer {
         if (chatName in this.chats && this.chats[chatName].clients.includes(client.state.username)) {
           await this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.id, chatMsg, channelName);
 
-          const pplObjs=this.usernames2ClientObj(this.chats[channelName].clients);
+          const pplObjs=this.usernames2ClientObj(this.chats[chatName].clients);
           for (const ppl of pplObjs) {
             // now let everyone else know
             // console.log('sending chat to ' + ppl.state.username);
