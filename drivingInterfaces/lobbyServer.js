@@ -136,8 +136,16 @@ class LobbyServer {
     });
 
 
-    eventEmitter.on('clearFromLobbyMemory', function(client) {
+    eventEmitter.on('clearFromLobbyMemory', function(client, reason) {
       console.log('logging out this client');
+      if (reason === 'sanity') {
+        server.dataManager.queryUser(client.state.username).then(async (user)=>{
+          user.sanity--;
+          await server.dataManager.setUser(user);
+        }).catch((e)=>{
+          console.log(e);
+        });
+      }
       server.logOutClient(client);
     });
 
