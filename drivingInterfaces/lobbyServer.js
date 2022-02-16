@@ -39,7 +39,7 @@ class LobbyServer {
             console.log(user);
             server.dataManager.regConfirmed(user.username).then((confirmed) => {
               if (! confirmed) {
-                server.clientSendNotice(client, 'warning', 'account not confirmed');
+                server.clientSendNotice(client, 'warning', 'account not confirmed'); // the client is established, but not logged in. It will only have access to limited commands
               } else if (res === 'verified') {
                 client.state = new ClientState({
                   username,
@@ -56,7 +56,7 @@ class LobbyServer {
                 server.players[client.state.username] = client;
 
                 server.stateDump(client, 'LOGIN');
-                console.log('logged in');
+                console.log('logging in');
               }
             }).catch((err) => {throw (err);});
           }).catch((e)=>{
@@ -68,7 +68,6 @@ class LobbyServer {
         // server.database.authenticate(message['parameters'])
         //    .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
       }
-
       // logged in, we assume the client has received contract prompt during login, it
       // has to agree to it now to continue. Or, it may continue if it agreed to it previously
       // REMOVE: needs to implement in case LOGIN
@@ -158,6 +157,7 @@ class LobbyServer {
         break;
       }
       case 'JOINCHAT': {
+        if (!client.state.loggedIn) return;
         console.log('received joinchat req');
         let chatToJoin;
         try {
@@ -195,31 +195,35 @@ class LobbyServer {
         break;
       }
       case 'SAYCHAT': {
-        let channelName;
+        if (!client.state.loggedIn) return;
         let chatName;
         let chatMsg;
         try {
           chatName = message['parameters']['chatName'] || 'global';
           chatMsg = message['parameters']['msg'];
-          channelName = message['parameters']['channelName'] || 'default';
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
+        if (chatMsg=='') return;
         // console.log(channelName);
         // console.log(this.chats);
         // console.log(this.chats[channelName].clients);
         if (chatName in this.chats && this.chats[chatName].clients.includes(client.state.username)) {
-          await this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.id, chatMsg, channelName);
+          // console.log('inserted message'+chatMsg);
+          // console.log('chat id: '+this.chats[chatName].chat.id);
+          // console.log('user id: '+client.state.id);
+
+          await this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.id, chatMsg);
+
 
           const pplObjs=this.usernames2ClientObj(this.chats[chatName].clients);
           for (const ppl of pplObjs) {
             // now let everyone else know
             // console.log('sending chat to ' + ppl.state.username);
             ppl.state.writeChatMsg({
-              channelName,
               'author': client.state.username,
               'msg': chatMsg,
-              chatName,
+              'chatName': chatName,
             });
             this.stateDump(ppl, 'SAYCHAT');
             // console.log(ppl.state.chatMsg);
@@ -239,6 +243,7 @@ class LobbyServer {
         break;
       }
       case 'LEAVECHAT': {
+        if (!client.state.loggedIn) return;
         let chatToLeave;
         try {
           chatToLeave = message['parameters']['chatName'];
@@ -264,6 +269,7 @@ class LobbyServer {
         break;
       }
       case 'JOINGAME': { // join a game
+        if (!client.state.loggedIn) return;
         let battleToJoin;
         const username=client.state.username;
         try { // catch malformed request
@@ -296,6 +302,7 @@ class LobbyServer {
         break;
       }
       case 'LEAVEGAME': { // leave a game
+        if (!client.state.loggedIn) return;
         console.log('received leaving game req');
         let battleToLeave;
 
@@ -323,6 +330,7 @@ class LobbyServer {
         this.stateDump(client, 'LEAVEGAME');
       }
       case 'ADDFREUND': {
+        if (!client.state.loggedIn) return;
         let freundtoadd;
         let username;
         try {
@@ -362,6 +370,7 @@ class LobbyServer {
 
       /* room related cmds, might require poll!*/
       case 'STARTGAME': { // set isStarted to true and let everyone else know
+        if (!client.state.loggedIn) return;
         let battleToStart;
         try {
           battleToStart = message['parameters']['battleName'];
@@ -405,6 +414,7 @@ class LobbyServer {
         break;
       }
       case 'SETTEAM': { // set team
+        if (!client.state.loggedIn) return;
         const battleToSetTeam = client.state.room;
         if (battleToSetTeam === null) return;
         let playerToSetTeam;
@@ -494,6 +504,7 @@ class LobbyServer {
         break;
       }
       case 'SETMAP': { // set the map
+        if (!client.state.loggedIn) return;
         let battleToSetMap;
         let mapToSet;
         try {
@@ -528,6 +539,7 @@ class LobbyServer {
         break;
       }
       case 'EXITGAME': {// set isStarted to false and let everyone else know
+        if (!client.state.loggedIn) return;
         let battleToStop;
         try {
           battleToStop = message['parameters']['battleName'];
@@ -611,21 +623,14 @@ class LobbyServer {
     }
     clearInterval(client.keepAlive);
     // remove client from all chats
-    try {
-      for (const chat of client.state.joinedChats) {
-        this.processLoggedClientCmd(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
-      }
-    } catch (e) {
-      console.log('client has no active chats');
+    for (const chat of client.state.joinedChats) {
+      this.processLoggedClientCmd(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
     }
 
-    try {
-      // remove client from all battles
-      this.processLoggedClientCmd( client, {'action ': 'LEAVEBATTLE', 'parameters': {'battleName': client.state.battle}});
-    }
-    catch (e) {
-      console.log('client has no active battles');
-    }
+
+    // remove client from all battles
+    this.processLoggedClientCmd( client, {'action ': 'LEAVEBATTLE', 'parameters': {'battleName': client.state.battle}});
+
 
     client.close();
     delete this.players[client.state.username];

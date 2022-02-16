@@ -91,7 +91,7 @@ class ClientState {
   }
   eraseChatMsg() {
     console.log('erasing chat msg');
-    this.chatMsg = false;
+    this.chatMsg = null;
   }
 }
 

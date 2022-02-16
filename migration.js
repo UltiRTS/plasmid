@@ -76,7 +76,6 @@ async function createSchema() {
           .notNullable().onDelete('CASCADE');
       table.integer('chatId').references('chats.id')
           .notNullable().onDelete('CASCADE');
-      table.string('channel', 255).notNullable();
       table.string('content', 255).notNullable();
       // ISO String format
       table.string('createAt', 255).notNullable();
