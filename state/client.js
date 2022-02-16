@@ -7,7 +7,7 @@ class ClientState {
   team = '';
   username = '';
   freunds={};
-  chatMsg = false;
+  chatMsg = null;
   userID='';
 
   constructor(options={
