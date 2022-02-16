@@ -623,13 +623,13 @@ class LobbyServer {
     }
     clearInterval(client.keepAlive);
     // remove client from all chats
-    for (const chat of client.state.joinedChats) {
-      this.processLoggedClientCmd(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
+    for (const chat of client.state.chats) {
+      this.processLoggedClient(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
     }
 
 
     // remove client from all battles
-    this.processLoggedClientCmd( client, {'action ': 'LEAVEBATTLE', 'parameters': {'battleName': client.state.battle}});
+    this.processLoggedClient( client, {'action ': 'LEAVEBATTLE', 'parameters': {'battleName': client.state.battle}});
 
 
     client.close();
