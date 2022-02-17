@@ -42,14 +42,14 @@ async function createSchema() {
     console.log('Created ip history table');
   }
 
-  if (! await knex.schema.hasTable('illegalInputHistory')) {
-    await knex.schema.createTable('illegalInputHistory', (table) => {
+  if (! await knex.schema.hasTable('illegalActions')) {
+    await knex.schema.createTable('illegalActions', (table) => {
       table.increments();
-      table.integer('ip').references('ipHistory.ip')
-          .notNullable().onDelete('CASCADE');
-      table.string('input', 255).notNullable();
+      table.integer('userId').references('users.id').onDelete('CASCADE');
+      table.string('type', 255).notNullable();
+      table.string('content', 255);
     });
-    console.log('Created ip history table');
+    console.log('Created illegal actions table');
   }
 
   if (! await knex.schema.hasTable('conformations')) {
