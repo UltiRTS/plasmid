@@ -136,7 +136,7 @@ class LobbyServer {
     });
 
 
-    eventEmitter.on('clearFromLobbyMemory', function(client, reason) {
+    eventEmitter.on('clearFromLobbyMemory', function(client) {
       console.log('logging out this client');
       if (reason === 'sanity') {
         server.dataManager.queryUser(client.state.username).then(async (user)=>{
@@ -581,6 +581,10 @@ class LobbyServer {
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'EXITGAME');
         }
+      }
+
+      default: {
+        eventEmitter.emit('invalidCommandFromClient', client, message);
       }
     }
   }

@@ -32,6 +32,26 @@ async function createSchema() {
     console.log('Created friends table');
   }
 
+  if (! await knex.schema.hasTable('ipHistory')) {
+    await knex.schema.createTable('ipHistory', (table) => {
+      table.increments();
+      table.integer('userId').references('users.id')
+          .notNullable().onDelete('CASCADE');
+      table.string('ip', 255).notNullable();
+    });
+    console.log('Created ip history table');
+  }
+
+  if (! await knex.schema.hasTable('illegalInputHistory')) {
+    await knex.schema.createTable('illegalInputHistory', (table) => {
+      table.increments();
+      table.integer('ip').references('ipHistory.ip')
+          .notNullable().onDelete('CASCADE');
+      table.string('input', 255).notNullable();
+    });
+    console.log('Created ip history table');
+  }
+
   if (! await knex.schema.hasTable('conformations')) {
     await knex.schema.createTable('confirmations', (table) => {
       table.increments();
