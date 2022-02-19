@@ -47,6 +47,8 @@ class AutohostManager {
     console.log('autohost starting game!');
     // eslint-disable-next-line max-len
     try {
+      const autohost = this.loadBalance();
+      roomObj.id = this.loadAvaiableID(autohost);
       Array.from(this.clients)[this.loadBalance()].send(JSON.stringify(
           {'action': 'startGame', 'parameters': roomObj}));
     } catch (err) {
@@ -59,6 +61,9 @@ class AutohostManager {
   }
 
   loadBalance(autohostIP) {
+    return 0;
+  }
+  loadAvaiableID(autohost) {
     return 0;
   }
 }
