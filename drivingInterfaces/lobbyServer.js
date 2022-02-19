@@ -138,14 +138,6 @@ class LobbyServer {
 
     eventEmitter.on('clearFromLobbyMemory', function(client) {
       console.log('logging out this client');
-      if (reason === 'sanity') {
-        server.dataManager.queryUser(client.state.username).then(async (user)=>{
-          user.sanity--;
-          await server.dataManager.setUser(user);
-        }).catch((e)=>{
-          console.log(e);
-        });
-      }
       server.logOutClient(client);
     });
 
@@ -635,7 +627,7 @@ class LobbyServer {
     }
     clearInterval(client.keepAlive);
     // remove client from all chats
-    for (const chat of client.state.chats) {
+    for (const chat in client.state.chats) {
       this.processLoggedClient(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
     }
 
@@ -704,6 +696,7 @@ class LobbyServer {
         'port': this.rooms[battle].getPort(),
         'ip': this.rooms[battle].getResponsibleAutohost(),
         'id': this.rooms[battle].getID(),
+        'engineToken': this.rooms[battle].engineToken,
       });
     }
     return games;

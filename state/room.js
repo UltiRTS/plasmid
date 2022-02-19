@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable guard-for-in */
 /* eslint-disable require-jsdoc */
 
@@ -14,6 +15,7 @@ class RoomState {
   players={}; // format: {'xiaoming':{'isSpec':true,'team':'A','hasmap':true}}
   polls = {};
   id=0;
+  engineToken='';
   password='';
   isStarted=false;
   responsibleAutohost='127.0.0.1';
@@ -31,6 +33,17 @@ class RoomState {
     this.map=map;
     this.id=ID;
     this.password=password;
+    this.engineToekn=makeid(10);
+    function makeid(length) {
+      let result = '';
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      const charactersLength = characters.length;
+      for ( let i = 0; i < length; i++ ) {
+        result += characters.charAt(Math.floor(Math.random() *
+   charactersLength));
+      }
+      return result;
+    }
   }
 
   setPlayer(playerName, team, isSpec=false, hasmap=true) {
@@ -275,7 +288,7 @@ class RoomState {
         isChicken: false,
         isSpectator: false,
         isLeader: false,
-        team: teamMapping[this.ais[ai].team],
+        team: teamMapping[this.ais[AI].team],
       };
       count++;
     }
