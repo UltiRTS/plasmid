@@ -288,7 +288,7 @@ class LobbyServer {
         try { // catch new room
           this.rooms[battleToJoin].setPlayer(username, 'A');
         } catch {
-          this.rooms[battleToJoin]=new RoomState(client.state.username, 'Comet Catcher Redux', Object.keys(this.rooms).length);
+          this.rooms[battleToJoin]=new RoomState(client.state.username, 'Red Comet', Object.keys(this.rooms).length);
           this.rooms[battleToJoin].setRoomName(battleToJoin);
           const autohostIPNum=this.loadBalance();
           this.rooms[battleToJoin].setResponsibleAutohost(autohostIPNum);
