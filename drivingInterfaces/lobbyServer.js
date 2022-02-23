@@ -141,8 +141,15 @@ class LobbyServer {
       server.logOutClient(client);
     });
 
-    eventEmitter.on('commandFromAutohost', function() {
+    eventEmitter.on('commandFromAutohost', function(client, message) {
       // do something with autohost incoming interface msg
+      const roomID = message.roomID;
+      const action = message.action;
+      const parameters = message.parameters;
+
+      switch (action) {
+
+      }
     });
   }
 
