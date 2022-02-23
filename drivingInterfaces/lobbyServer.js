@@ -51,7 +51,7 @@ class LobbyServer {
 
                 client.connectivity = 10;
                 client.respondedKeepAlive = true;
-                // client.keepAlive = server.processPing(client);
+                client.keepAlive = server.processPing(client);
 
                 server.players[client.state.username] = client;
 
