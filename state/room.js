@@ -27,7 +27,7 @@ class RoomState {
    * @param {int} ID id for room
    * @param {String} password password for room
    */
-  constructor(hoster='default', map='Comet Catcher Redux', ID=0, password='') {
+  constructor(hoster='default', map='DeltaSiegeDry', ID=0, password='') {
     this.hoster = hoster;
     this.players[hoster]={'isSpec': false, 'team': 'A', 'hasmap': true};
     this.map=map;
@@ -223,7 +223,7 @@ class RoomState {
     this.poll={};
 
     const engineLaunchObj = {};
-    engineLaunchObj['id']=this.ID;
+    engineLaunchObj['id']=this.id;
     engineLaunchObj['mgr']=this.responsibleAutohost;
     engineLaunchObj['map'] = this.map;
     engineLaunchObj['team']={};
