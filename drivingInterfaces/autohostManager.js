@@ -16,19 +16,7 @@ class AutohostManager {
     this.availableautohostIPs=availableServers;
     const server=this;
     initAutohostServerNetwork(availableServers);
-    eventEmitter.on('commandFromAutohost', function(client, message) {
-      switch (message.action) {
-        case 'sayChat':
-          // eslint-disable-next-line max-len
-          server.sayChat(message.parameters); // the parameters contain the author, the chat content and the target channel
-        case 'exitGame':
-          server.exitGame(message.parameters);
-        case 'kickPlayer':
-          server.kickPlayer(message.parameters);
-        case 'giveUpandLose':
-          server.giveUpandLose(message.parameters);
-      }
-    });
+
 
     eventEmitter.on('connectionFromAutohost', function(clients) {
       server.clients=clients;

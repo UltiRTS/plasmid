@@ -143,14 +143,24 @@ class LobbyServer {
 
     eventEmitter.on('commandFromAutohost', function(client, message) {
       // do something with autohost incoming interface msg
-      const roomID = message.roomID;
-      const action = message.action;
-      const parameters = message.parameters;
-
-      switch (action) {
-
-      }
+      // const roomID = message.parameters.roomID;
+      // message=JSON.parse(message);
+      server.processAutohost(message.action, message.parameters);
     });
+  }
+
+  processAutohost(action, parameters) {
+    console.log(parameters);
+    console.log(parameters.title);
+    const roomID=parameters['title'];
+    switch (action) {
+      case 'serverStarted':
+        const playerList = this.rooms[roomID].getPlayers();
+        const playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
+          this.stateDump(ppl, 'STARTGAME');
+        }
+    }
   }
 
 
@@ -295,7 +305,7 @@ class LobbyServer {
         try { // catch new room
           this.rooms[battleToJoin].setPlayer(username, 'A');
         } catch {
-          this.rooms[battleToJoin]=new RoomState(client.state.username, 'Red Comet', Object.keys(this.rooms).length);
+          this.rooms[battleToJoin]=new RoomState(battleToJoin, client.state.username, 'Red Comet', Object.keys(this.rooms).length);
           this.rooms[battleToJoin].setRoomName(battleToJoin);
           const autohostIPNum=this.loadBalance();
           this.rooms[battleToJoin].setResponsibleAutohost(autohostIPNum);
@@ -411,13 +421,10 @@ class LobbyServer {
               'error',
               'not enough players to start game');
         }
+        // dont statedump at this moment
+        // statedump for start is called upon autohost return in processautohost!
 
 
-        const playerList = this.rooms[battleToStart].getPlayers();
-        const playerListObj= this.usernames2ClientObj(playerList);
-        for (const ppl of playerListObj) {
-          this.stateDump(ppl, 'STARTGAME');
-        }
         break;
       }
       case 'SETTEAM': { // set team

@@ -7,7 +7,7 @@
  * @description for managing room
  */
 class RoomState {
-  tile='';
+  title='';
   hoster = '';
   map = 'somemap';
   ais={}; // {'circuirAI':{'team':'A'}}
@@ -20,16 +20,11 @@ class RoomState {
   isStarted=false;
   responsibleAutohost='127.0.0.1';
 
-  /**
-   *
-   * @param {String} hoster room hoster
-   * @param {String} map map name
-   * @param {int} ID id for room
-   * @param {String} password password for room
-   */
-  constructor(hoster='default', map='DeltaSiegeDry', ID=0, password='') {
+
+  constructor(title, hoster='default', map='DeltaSiegeDry', ID=0, password='') {
     this.hoster = hoster;
     this.players[hoster]={'isSpec': false, 'team': 'A', 'hasmap': true};
+    this.title=title;
     this.map=map;
     this.id=ID;
     this.password=password;
@@ -96,7 +91,7 @@ class RoomState {
   }
 
   getPort() {
-    return this.id+2000;
+    return this.id+6000;
   }
 
   /**
@@ -224,6 +219,7 @@ class RoomState {
 
     const engineLaunchObj = {};
     engineLaunchObj['id']=this.id;
+    engineLaunchObj['title']=this.title;
     engineLaunchObj['mgr']=this.responsibleAutohost;
     engineLaunchObj['map'] = this.map;
     engineLaunchObj['team']={};
