@@ -12,14 +12,13 @@ class AutohostManager {
    *
    * @param {Array} availableServers
    */
-  constructor(availableServers) {
-    this.availableautohostIPs=availableServers;
+  constructor(allowedClients) {
     const server=this;
-    initAutohostServerNetwork(availableServers);
+    initAutohostServerNetwork(allowedClients);
 
 
     eventEmitter.on('connectionFromAutohost', function(clients) {
-      server.clients=clients;
+      server.clients=clients; // a lit of autohost
       // console.log(clients);
     });
   }
@@ -30,29 +29,40 @@ class AutohostManager {
    */
   start(roomObj) {
     // console.log(Array.from(this.clients)[0]);
-    const autohostNum=roomObj.mgr;
+    const autohostIP=roomObj.mgr;
     console.log(autohostNum);
     console.log('autohost starting game!');
     // eslint-disable-next-line max-len
     try {
-      const autohost = this.loadBalance();
-      roomObj.id = this.loadAvaiableID(autohost);
-      Array.from(this.clients)[this.loadBalance()].send(JSON.stringify(
+      const autohost = autohostIPtoID(autohostIP);
+      this.clients[autohost].send(JSON.stringify(
           {'action': 'startGame', 'parameters': roomObj}));
     } catch (err) {
       console.log('no active autohost!');
     }
   }
 
-  autohostIDtoIP(autohostID) {
-    return this.availableautohostIPs[autohostID];
+  killEngine(roomObj) {
+    const autohostIP=roomObj.mgr;
+    console.log(autohostNum);
+    console.log('autohost killing engine!');
+    // eslint-disable-next-line max-len
+    try {
+      const autohost = autohostIPtoID(autohostIP);
+      this.clients[autohost].send(JSON.stringify(
+          {'action': 'killEngine', 'parameters': roomObj}));
+    } catch (err) {
+      console.log('no active autohost!');
+    }
   }
 
-  loadBalance(autohostIP) {
-    return 0;
-  }
-  loadAvaiableID(autohost) {
-    return 0;
+
+  autohostIPtoID(autohostIP) {
+    for (autohosts in this.clients) {
+      if (this.clients[autohosts].ip === autohostIP) {
+        return autohosts;
+      }
+    }
   }
 }
 

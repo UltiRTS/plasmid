@@ -152,14 +152,24 @@ class LobbyServer {
   processAutohost(action, parameters) {
     console.log(parameters);
     console.log(parameters.title);
-    const roomID=parameters['title'];
+    const roomTitle=parameters['title'];
+    let playerList;
+    let playerListObj;
     switch (action) {
       case 'serverStarted':
-        const playerList = this.rooms[roomID].getPlayers();
-        const playerListObj= this.usernames2ClientObj(playerList);
+        playerList = this.rooms[roomTitle].getPlayers();
+        playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'STARTGAME');
         }
+        break;
+      case 'serverEnding':
+        playerList = this.rooms[roomTitle].getPlayerList();
+        playerListObj= this.usernames2ClientObj(playerList);
+        for (const ppl of playerListObj) {
+          this.stateDump(ppl, 'EXITGAME');
+        }
+        break;
     }
   }
 
@@ -581,12 +591,7 @@ class LobbyServer {
               'error',
               'not enough players to stop game');
         }
-
-        const playerList = this.rooms[battleToSetTeam].getPlayerList();
-        const playerListObj= this.usernames2ClientObj(playerList);
-        for (const ppl of playerListObj) {
-          this.stateDump(ppl, 'EXITGAME');
-        }
+        // notify players in processautohost!
       }
 
       default: {
