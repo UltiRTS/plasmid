@@ -110,8 +110,8 @@ class LobbyServer {
             server.clientSendNotice(client, 'error', res);
           }
         }).catch((e)=>{
-          console.log(e);
           server.clientSendNotice(client, 'error', 'Username already exists');
+          console.log(e);
         });
 
         // const dup = await server.database.checkDup(username);
@@ -357,6 +357,7 @@ class LobbyServer {
         this.stateDump(client, 'LEAVEGAME');
       }
       case 'ADDFREUND': {
+        console.log('friend', message);
         if (!client.state.loggedIn) return;
         let freundtoadd;
         let username;
@@ -366,6 +367,9 @@ class LobbyServer {
           const addRes = await this.dataManager.addFriend(username, freundtoadd);
           if (addRes === 'added') {
             await this.dataManager.addConfirmation(freundtoadd, username, 'friend', '');
+            this.clientSendNotice(client, 'success', 'sent request');
+          } else {
+            this.clientSendNotice(client, 'error', addRes);
           }
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid freund');
