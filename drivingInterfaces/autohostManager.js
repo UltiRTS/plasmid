@@ -30,37 +30,46 @@ class AutohostManager {
   start(roomObj) {
     // console.log(Array.from(this.clients)[0]);
     const autohostIP=roomObj.mgr;
-    console.log(autohostNum);
+    // console.log(autohostNum);
     console.log('autohost starting game!');
+    const autohosts=Array.from(this.clients);
     // eslint-disable-next-line max-len
     try {
-      const autohost = autohostIPtoID(autohostIP);
-      this.clients[autohost].send(JSON.stringify(
+      const autohost = this.autohostIPtoID(autohostIP);
+      console.log(autohost);
+      console.log(autohostIP);
+      autohosts[autohost].send(JSON.stringify(
           {'action': 'startGame', 'parameters': roomObj}));
     } catch (err) {
       console.log('no active autohost!');
+      console.log(err);
     }
   }
 
   killEngine(roomObj) {
     const autohostIP=roomObj.mgr;
-    console.log(autohostNum);
+    // console.log(autohostNum);
     console.log('autohost killing engine!');
+    const autohosts=Array.from(this.clients);
     // eslint-disable-next-line max-len
     try {
-      const autohost = autohostIPtoID(autohostIP);
-      this.clients[autohost].send(JSON.stringify(
+      const autohost = this.autohostIPtoID(autohostIP);
+      autohosts[autohost].send(JSON.stringify(
           {'action': 'killEngine', 'parameters': roomObj}));
     } catch (err) {
       console.log('no active autohost!');
+      console.log(err);
     }
   }
 
 
   autohostIPtoID(autohostIP) {
-    for (autohosts in this.clients) {
-      if (this.clients[autohosts].ip === autohostIP) {
-        return autohosts;
+    const autohosts=Array.from(this.clients);
+    // console.log(autohosts);
+    for (const autohost in autohosts) {
+      // console.log(autohosts[autohost]);
+      if (autohosts[autohost].ip.endsWith(autohostIP)) {
+        return autohost;
       }
     }
   }

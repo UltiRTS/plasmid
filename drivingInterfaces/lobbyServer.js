@@ -164,8 +164,10 @@ class LobbyServer {
         }
         break;
       case 'serverEnding':
-        playerList = this.rooms[roomTitle].getPlayerList();
+        playerList = this.rooms[roomTitle].getPlayers();
         playerListObj= this.usernames2ClientObj(playerList);
+        this.rooms[roomTitle].clearPoll();
+        this.rooms[roomTitle].configureToStop();
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'EXITGAME');
         }
@@ -209,10 +211,8 @@ class LobbyServer {
         {
           console.log('actually joining chat');
           this.chats[chatToJoin].clients.push(client.state.username);
-          client.state.joinChat(chatToJoin);
         }
-
-
+        client.state.joinChat(chatToJoin);
         const usersinchat = this.usernames2ClientObj(this.chats[chatToJoin].clients);
         for (const ppl of usersinchat) {
           // now let everyone else know
@@ -580,8 +580,6 @@ class LobbyServer {
         client.state.username ==
         this.rooms[battleToStop].getHoster()) {
           try {
-            this.rooms[battleToStop].clearPoll();
-            this.rooms[battleToStop].configureToStop();
             autohostServer.killEngine(this.rooms[battleToStop]);
           } catch (e) {
             console.log('NU', e);
@@ -648,12 +646,13 @@ class LobbyServer {
     // remove client from all chats
     for (const chat in client.state.chats) {
       this.processLoggedClient(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
+      console.log('leaving chat'+chat);
     }
 
 
     // remove client from all battles
     this.processLoggedClient( client, {'action ': 'LEAVEBATTLE', 'parameters': {'battleName': client.state.battle}});
-
+    console.log('leaving battle'+client.state.room);
 
     client.close();
     delete this.players[client.state.username];
@@ -726,7 +725,7 @@ class LobbyServer {
    * @return {Number}
    */
   loadBalance() {
-    return autohostServer.autohostIDtoIP(0);
+    return '127.0.0.1';
   }
 }
 
