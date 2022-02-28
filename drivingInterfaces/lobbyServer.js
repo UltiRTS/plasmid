@@ -36,8 +36,7 @@ class LobbyServer {
         server.dataManager.login(username, password).then((res) => {
           console.log('logining');
           server.dataManager.queryUser(username).then((user)=>{
-            console.log(user);
-            server.dataManager.regConfirmed(user.username).then((confirmed) => {
+            server.dataManager.regConfirmed(user.username).then(async (confirmed) => {
               if (! confirmed) {
                 server.clientSendNotice(client, 'warning', 'account not confirmed'); // the client is established, but not logged in. It will only have access to limited commands
               } else if (res === 'verified') {
@@ -46,6 +45,17 @@ class LobbyServer {
                   accLevel: user.accessLevel,
                   id: user.id,
                 });
+
+                try {
+                  client.state.freunds = await server.dataManager.getFriends(username);
+                } catch (e) {
+                  server.clientSendNotice(client, 'error', 'could not get friends');
+                }
+                try {
+                  client.notifications = await server.dataManager.getConfirmation(username);
+                } catch (e) {
+                  server.clientSendNotice(client, 'error', 'could not get notifications');
+                }
 
                 client.state.login();
 
@@ -368,10 +378,15 @@ class LobbyServer {
           if (addRes === 'added') {
             await this.dataManager.addConfirmation(freundtoadd, username, 'friend', '');
             this.clientSendNotice(client, 'success', 'sent request');
+            client.state.freunds.push({
+              username: freundtoadd,
+            });
+            this.stateDump(client, 'ADDFREUND');
           } else {
             this.clientSendNotice(client, 'error', addRes);
           }
         } catch (e) {
+          console.log('frined', e);
           this.clientSendNotice(client, 'error', 'invalid freund');
         } // hackery going on
         break;

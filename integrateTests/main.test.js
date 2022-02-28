@@ -2,6 +2,13 @@
 const ws = require('ws');
 const WebSocket = ws.WebSocket;
 
+const addFriendJson = {
+  action: 'ADDFREUND',
+  parameters: {
+    'freund': 'test',
+  },
+};
+
 const registerJson = {
   action: 'REGISTER',
   parameters: {
@@ -85,7 +92,8 @@ const addFreundJson = {
 
 const socket = new WebSocket('ws://localhost:9090');
 socket.on('open', function open() {
-  socket.send(JSON.stringify(registerJson));
+  // socket.send(JSON.stringify(registerJson));
+  socket.send(JSON.stringify(loginJson));
 });
 
 socket.on('message', (message) => {
@@ -99,6 +107,7 @@ socket.on('message', (message) => {
         break;
       case 'LOGIN':
         socket.send(JSON.stringify(joinChatJson));
+        socket.send(JSON.stringify(addFreundJson));
         break;
       case 'JOINCHAT':
         socket.send(JSON.stringify(sayChatJson));

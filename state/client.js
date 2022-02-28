@@ -6,9 +6,10 @@ class ClientState {
   room = null;
   team = '';
   username = '';
-  freunds={};
+  freunds=[];
   chatMsg = null;
   userID='';
+  notifications = [];
 
   constructor(options={
     username: '',
