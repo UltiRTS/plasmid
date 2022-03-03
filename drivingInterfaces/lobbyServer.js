@@ -208,7 +208,7 @@ class LobbyServer {
         const usersinchat = this.usernames2ClientObj(this.chats[chatToJoin].clients);
         for (const ppl of usersinchat) {
           // now let everyone else know
-          this.stateDump(reqId, ppl, 'JOINCHAT');
+          this.stateDump(ppl, 'JOINCHAT', reqId);
         }
 
         break;
@@ -244,7 +244,7 @@ class LobbyServer {
               'msg': chatMsg,
               'chatName': chatName,
             });
-            this.stateDump(reqId, ppl, 'SAYCHAT');
+            this.stateDump(ppl, 'SAYCHAT', reqId);
             // console.log(ppl.state.chatMsg);
 
             // console.log(ppl.state.chatMsg);
@@ -255,7 +255,7 @@ class LobbyServer {
             // }
           }
         } else {
-          this.stateDump(reqId, client, 'SAYCHAT');
+          this.stateDump(client, 'SAYCHAT', reqId);
         }
 
 
@@ -280,10 +280,10 @@ class LobbyServer {
         } // hackery going on
         // remove this user from the chat's list of users
         client.state.leaveChat(chatToLeave);
-        this.stateDump(reqId, client, 'LEAVECHAT');
+        this.stateDump(client, 'LEAVECHAT', reqId);
         const pplObjs=this.usernames2ClientObj(this.chats[chatToLeave].clients);
         for (const ppl of pplObjs) {
-          this.stateDump(reqId, ppl, 'LEAVECHAT');
+          this.stateDump(ppl, 'LEAVECHAT', reqId);
         }
         break;
       }
@@ -316,7 +316,7 @@ class LobbyServer {
         // const playerList = this.rooms[battleToJoin].getPlayers();
         for (const ppl in this.players) {
           // now let everyone else know
-          this.stateDump(reqId, this.players[ppl], 'JOINGAME');
+          this.stateDump(this.players[ppl], 'JOINGAME', reqId);
         }
         break;
       }
@@ -342,11 +342,11 @@ class LobbyServer {
         const playerList = this.rooms[battleToLeave].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
-          this.stateDump(reqId, ppl, 'LEAVEGAME');
+          this.stateDump(ppl, 'LEAVEGAME', reqId);
         }
 
         // let the client that left know
-        this.stateDump(reqId, client, 'LEAVEGAME');
+        this.stateDump(client, 'LEAVEGAME', reqId);
       }
       case 'ADDFREUND': {
         console.log('friend', message);
@@ -359,7 +359,7 @@ class LobbyServer {
         await this.dataManager.addConfirmation(username, freundtoadd+'has requested you to be their friend', 'friend', freundtoadd);
         this.clientSendNotice(client, 'success', 'sent request');
 
-        this.stateDump(reqId, client, 'ADDFREUND');
+        this.stateDump(client, 'ADDFREUND', reqId);
 
 
         break;
@@ -536,7 +536,7 @@ class LobbyServer {
         const playerList = this.rooms[battleToSetTeam].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
-          this.stateDump(reqId, ppl, 'SETTEAM');
+          this.stateDump(ppl, 'SETTEAM', reqId);
         }
 
         break;
@@ -576,7 +576,7 @@ class LobbyServer {
         const playerList = this.rooms[battleToSetTeam].getPlayerList();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
-          this.stateDump(reqId, ppl, 'SETMAP');
+          this.stateDump(ppl, 'SETMAP', reqId);
         }
         break;
       }
@@ -678,7 +678,7 @@ class LobbyServer {
 
   // set an event listener for client disconnect
 
-  stateDump(reqId='defaultBrodCast', ppl, triggeredBy = 'DefaultTrigger') {
+  stateDump(ppl, triggeredBy = 'DefaultTrigger', reqId='defaultReq') {
     // TODO: should add a filter for messages delivering
 
     // get all games
