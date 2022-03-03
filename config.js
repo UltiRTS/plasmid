@@ -12,6 +12,8 @@ const knexConf = {
 
 };
 
+const dntpServiceHost = 'http://localhost:3000';
+
 /** READ BY THE ACTUAL PROGRAM */
 const config={
   autohosts: ['127.0.0.1'],
@@ -27,4 +29,5 @@ module.exports = {
   config,
   knexConf,
   debug,
+  dntpServiceHost,
 };

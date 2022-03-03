@@ -10,6 +10,7 @@ class RoomState {
   title='';
   hoster = '';
   map = 'somemap';
+  mapId = 0;
   ais={}; // {'circuirAI':{'team':'A'}}
   chickens={};
   players={}; // format: {'xiaoming':{'isSpec':true,'team':'A','hasmap':true}}
@@ -202,6 +203,10 @@ class RoomState {
     this.map = mapName;
   }
 
+  setMapId(mapId) {
+    this.mapId = mapId;
+  }
+
   /**
    * sets the room to stop
    */
@@ -223,6 +228,8 @@ class RoomState {
     engineLaunchObj['mgr']=this.responsibleAutohost;
     engineLaunchObj['map'] = this.map;
     engineLaunchObj['team']={};
+
+    engineLaunchObj['mapId'] = this.mapId;
 
     const teamMapping = {};
     let teamCount = 0;

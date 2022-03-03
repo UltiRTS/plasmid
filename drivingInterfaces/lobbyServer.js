@@ -545,13 +545,16 @@ class LobbyServer {
         if (!client.state.loggedIn) return;
         let battleToSetMap;
         let mapToSet;
+        let mapId;
         try {
           battleToSetMap = message['parameters']['battleName'];
           mapToSet = message['parameters']['map'];
+          mapId = message['parameters']['mapId'];
         } catch (e) {
           // eslint-disable-next-line max-len
           this.clientSendNotice(client, 'error', 'invalid battle name to set map');
         }
+
 
         // add this cmd to the poll if it's not in the poll
         this.rooms[battleToSetMap].addPoll(client.state.username, action);
@@ -564,6 +567,7 @@ class LobbyServer {
           try {
             this.rooms[battleToSetMap].clearPoll();
             this.rooms[battleToSetMap].setMap(mapToSet);
+            this.rooms[battleToSetMap].setMapId(mapId);
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
