@@ -40,10 +40,14 @@ class LobbyServer {
               if (! confirmed) {
                 server.clientSendNotice(client, 'warning', 'account not confirmed'); // the client is established, but not logged in. It will only have access to limited commands
               } else if (res === 'verified') {
+                const freundslist = await server.dataManager.getFriends(username);
+                const notifications = await server.dataManager.getNotifications(username);
                 client.state = new ClientState({
                   username,
                   accLevel: user.accessLevel,
                   id: user.id,
+                  freunds: freundslist,
+                  notifications: notifications,
                 });
 
                 try {
@@ -75,30 +79,8 @@ class LobbyServer {
         }).catch((e)=>{
           server.clientSendNotice(client, 'error', 'Wrong username or password');
         });
-        // server.database.authenticate(message['parameters'])
-        //    .then((dbRet)=>loginClientWithLimitsCheck(dbRet));
       }
-      // logged in, we assume the client has received contract prompt during login, it
-      // has to agree to it now to continue. Or, it may continue if it agreed to it previously
-      // REMOVE: needs to implement in case LOGIN
-      // else if ('state' in client && client.state.loggedIn) {
-      //   const status = await server.database.checkBlocked(client.state.username);
-      //   switch (status) {
-      //     case 'no':
-      //       server.processLoggedClient(client, message);
-      //       break;
-      //     case 'regConfirm':
-      //       if (message['action'] == 'regConfirm') {
-      //         server.database.confirmReg(client.state.username).then((dbRet) => {
-      //           server.processLoggedClient(client, message);
-      //         });
-      //       } else {
-      //         eventEmitter.emit('clearFromLobbyMemory', client);
-      //       }
-      //   }
-      // }
 
-      // unregistered, we register, then login with contract prompt
       else if (message['action'] == 'REGISTER') {
         const username = message['parameters']['usr'];
         const password = message['parameters']['passwd'];
@@ -188,7 +170,7 @@ class LobbyServer {
 
   async processLoggedClient(client, message) {
     const action = message['action'];
-
+    const reqId = message['reqId'];
     switch (action) {
       case 'PONG': {
         client.respondedKeepAlive = true;
@@ -226,7 +208,7 @@ class LobbyServer {
         const usersinchat = this.usernames2ClientObj(this.chats[chatToJoin].clients);
         for (const ppl of usersinchat) {
           // now let everyone else know
-          this.stateDump(ppl, 'JOINCHAT');
+          this.stateDump(reqId, ppl, 'JOINCHAT');
         }
 
         break;
@@ -262,7 +244,7 @@ class LobbyServer {
               'msg': chatMsg,
               'chatName': chatName,
             });
-            this.stateDump(ppl, 'SAYCHAT');
+            this.stateDump(reqId, ppl, 'SAYCHAT');
             // console.log(ppl.state.chatMsg);
 
             // console.log(ppl.state.chatMsg);
@@ -273,7 +255,7 @@ class LobbyServer {
             // }
           }
         } else {
-          this.stateDump(client, 'SAYCHAT');
+          this.stateDump(reqId, client, 'SAYCHAT');
         }
 
 
@@ -298,10 +280,10 @@ class LobbyServer {
         } // hackery going on
         // remove this user from the chat's list of users
         client.state.leaveChat(chatToLeave);
-        this.stateDump(client, 'LEAVECHAT');
+        this.stateDump(reqId, client, 'LEAVECHAT');
         const pplObjs=this.usernames2ClientObj(this.chats[chatToLeave].clients);
         for (const ppl of pplObjs) {
-          this.stateDump(ppl, 'LEAVECHAT');
+          this.stateDump(reqId, ppl, 'LEAVECHAT');
         }
         break;
       }
@@ -334,7 +316,7 @@ class LobbyServer {
         // const playerList = this.rooms[battleToJoin].getPlayers();
         for (const ppl in this.players) {
           // now let everyone else know
-          this.stateDump(this.players[ppl], 'JOINGAME');
+          this.stateDump(reqId, this.players[ppl], 'JOINGAME');
         }
         break;
       }
@@ -360,35 +342,26 @@ class LobbyServer {
         const playerList = this.rooms[battleToLeave].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
-          this.stateDump(ppl, 'LEAVEGAME');
+          this.stateDump(reqId, ppl, 'LEAVEGAME');
         }
 
         // let the client that left know
-        this.stateDump(client, 'LEAVEGAME');
+        this.stateDump(reqId, client, 'LEAVEGAME');
       }
       case 'ADDFREUND': {
         console.log('friend', message);
         if (!client.state.loggedIn) return;
-        let freundtoadd;
-        let username;
-        try {
-          freundtoadd = message['parameters']['freund'];
-          username = client.state.username;
-          const addRes = await this.dataManager.addFriend(username, freundtoadd);
-          if (addRes === 'added') {
-            await this.dataManager.addConfirmation(freundtoadd, username, 'friend', '');
-            this.clientSendNotice(client, 'success', 'sent request');
-            client.state.freunds.push({
-              username: freundtoadd,
-            });
-            this.stateDump(client, 'ADDFREUND');
-          } else {
-            this.clientSendNotice(client, 'error', addRes);
-          }
-        } catch (e) {
-          console.log('frined', e);
-          this.clientSendNotice(client, 'error', 'invalid freund');
-        } // hackery going on
+        // let freundtoadd;
+        // let username;
+
+        const freundtoadd = message['parameters']['freund'];
+        const username = client.state.username;
+        await this.dataManager.addConfirmation(username, freundtoadd+'has requested you to be their friend', 'friend', freundtoadd);
+        this.clientSendNotice(client, 'success', 'sent request');
+
+        this.stateDump(reqId, client, 'ADDFREUND');
+
+
         break;
       }
 
@@ -398,14 +371,36 @@ class LobbyServer {
         let username;
         try {
           confirmationId = message['parameters']['id'];
-          acceptOrNot = message['parameters']['AcceptNum'];
+          acceptOrNot = message['parameters']['isAccepted'];
           username = client.state.username;
-          if (client.state.loggedIn) {
-            if (acceptOrNot) {
-              const res =
+          if (acceptOrNot) {
+            const res =
                 await this.dataManager.confirm(username, confirmationId);
-              if (res === 'yes') this.clientSendNotice(client, 'success', 'confirmed');
-              else this.clientSendNotice(client, 'error', res);
+            if (res)
+            {
+              client.state.notifications = this.dataManager.getNotifications(username);
+              this.clientSendNotice(client, 'success', 'confirmed');
+              const whatIhaveConfirmed = await this.dataManager.getConfirmation(username, confirmationId);
+              switch (whatIhaveConfirmed.type)
+              {
+                case 'friend':
+                  const addRes = await this.dataManager.addFriend(username, whatIhaveConfirmed.parameters);
+                  try {
+                    if (addRes === 'added') {
+                      client.state.freunds.push({
+                        username: freundtoadd,
+                      });
+                    } else {
+                      this.clientSendNotice(client, 'error', addRes);
+                    }
+                  } catch (e) {
+                    console.log('frined', e);
+                    this.clientSendNotice(client, 'error', 'invalid freund');
+                  } // hackery going on
+              }
+            }
+            else {
+              this.clientSendNotice(client, 'error', res);
             }
           }
         } catch (e) {
@@ -445,7 +440,7 @@ class LobbyServer {
             console.log('NU', e);
           } // hackery going on
         } else {
-          // this.stateDump(client, 'STARTGAME');
+          // this.stateDump(reqId, client, 'STARTGAME');
           this.clientSendNotice(client,
               'error',
               'not enough players to start game');
@@ -541,7 +536,7 @@ class LobbyServer {
         const playerList = this.rooms[battleToSetTeam].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
-          this.stateDump(ppl, 'SETTEAM');
+          this.stateDump(reqId, ppl, 'SETTEAM');
         }
 
         break;
@@ -577,7 +572,7 @@ class LobbyServer {
         const playerList = this.rooms[battleToSetTeam].getPlayerList();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
-          this.stateDump(ppl, 'SETMAP');
+          this.stateDump(reqId, ppl, 'SETMAP');
         }
         break;
       }
@@ -679,7 +674,7 @@ class LobbyServer {
 
   // set an event listener for client disconnect
 
-  stateDump(ppl, triggeredBy = 'DefaultTrigger') {
+  stateDump(reqId='defaultBrodCast', ppl, triggeredBy = 'DefaultTrigger') {
     // TODO: should add a filter for messages delivering
 
     // get all games
@@ -690,21 +685,20 @@ class LobbyServer {
 
 
     // dump the poll as well if the person is in a game
-    this.dataManager.getConfirmation(ppl.state.username).then((confirmations) => {
-      const response = {
-        'games': games,
-        'chatsIndex': chatIndex,
-        'notifications': confirmations,
-        'usrstats': ppl.state.getState(),
-      };
+
+    const response = {
+      'games': games,
+      'chatsIndex': chatIndex,
+      'usrstats': ppl.state.getState(),
+    };
       // console.log(ppl.state.getState());
-      ppl.send(JSON.stringify({
-        'action': 'stateDump',
-        triggeredBy,
-        'paramaters': response,
-      }));
-      ppl.state.eraseChatMsg();
-    });
+    ppl.send(JSON.stringify({
+      'id': reqId,
+      'action': 'stateDump',
+      triggeredBy,
+      'paramaters': response,
+    }));
+    ppl.state.eraseChatMsg();
   }
 
   getChatIndex() {

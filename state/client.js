@@ -15,11 +15,15 @@ class ClientState {
     username: '',
     accLevel: '',
     id: -1,
+    freunds: [],
+    notifications: [],
   }) {
     this.username = options.username;
     this.accLevel = options.accLevel;
-    this.id = options.id;
+    this.userID = options.id;
     this.loggedIn = true;
+    this.freunds=options.freunds;
+    this.notifications=options.notifications;
   }
 
   login() {
@@ -78,6 +82,7 @@ class ClientState {
       fruneds: this.freunds,
       chatMsg: this.chatMsg,
       username: this.username,
+      notifications: this.notifications,
     };
   }
 
