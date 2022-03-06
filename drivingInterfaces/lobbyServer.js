@@ -629,7 +629,7 @@ class LobbyServer {
         server.logOutClient(client);
       }
     }
-    return setInterval(checkPing, 1000);
+    return setInterval(checkPing, 5000);
   }
 
 
