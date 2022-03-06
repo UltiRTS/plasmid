@@ -341,8 +341,14 @@ class LobbyServer {
         client.state.leaveRoom(battleToLeave);
         const playerList = this.rooms[battleToLeave].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
+
+
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'LEAVEGAME', reqId);
+        }
+
+        if (playerList.length === 0) {
+          delete this.rooms[battleToLeave];
         }
 
         // let the client that left know
