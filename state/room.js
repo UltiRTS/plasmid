@@ -9,7 +9,6 @@
 class RoomState {
   title='';
   hoster = '';
-  map = 'somemap';
   mapId = 0;
   ais={}; // {'circuirAI':{'team':'A'}}
   chickens={};
@@ -22,11 +21,11 @@ class RoomState {
   responsibleAutohost='127.0.0.1';
 
 
-  constructor(title, hoster='default', map='DeltaSiegeDry', ID=0, password='') {
+  constructor(title, hoster='default', mapId='12345', ID=0, password='') {
     this.hoster = hoster;
     this.players[hoster]={'isSpec': false, 'team': 'A', 'hasmap': true};
     this.title=title;
-    this.map=map;
+    this.mapId=mapId;
     this.id=ID;
     this.password=password;
     this.engineToekn=makeid(10);
@@ -191,17 +190,9 @@ class RoomState {
   }
 
   getMap() {
-    return this.map;
+    return this.mapId;
   }
 
-
-  /**
-   *
-   * @param {String} mapName
-   */
-  setMap(mapName) {
-    this.map = mapName;
-  }
 
   setMapId(mapId) {
     this.mapId = mapId;
@@ -226,7 +217,6 @@ class RoomState {
     engineLaunchObj['id']=this.id;
     engineLaunchObj['title']=this.title;
     engineLaunchObj['mgr']=this.responsibleAutohost;
-    engineLaunchObj['map'] = this.map;
     engineLaunchObj['team']={};
 
     engineLaunchObj['mapId'] = this.mapId;
