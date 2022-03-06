@@ -41,7 +41,7 @@ class LobbyServer {
                 server.clientSendNotice(client, 'warning', 'account not confirmed'); // the client is established, but not logged in. It will only have access to limited commands
               } else if (res === 'verified') {
                 const freundslist = await server.dataManager.getFriends(username);
-                const notifications = await server.dataManager.getNotifications(username);
+                const notifications = await server.dataManager.getConfirmation(username);
                 client.state = new ClientState({
                   username,
                   accLevel: user.accessLevel,
@@ -307,7 +307,7 @@ class LobbyServer {
         try { // catch new room
           this.rooms[battleToJoin].setPlayer(username, 'A');
         } catch {
-          this.rooms[battleToJoin]=new RoomState(battleToJoin, client.state.username, 'Red Comet', Object.keys(this.rooms).length);
+          this.rooms[battleToJoin]=new RoomState(battleToJoin, client.state.username, '9440', Object.keys(this.rooms).length);
           this.rooms[battleToJoin].setRoomName(battleToJoin);
           const autohostIPNum=this.loadBalance();
           this.rooms[battleToJoin].setResponsibleAutohost(autohostIPNum);
@@ -550,11 +550,10 @@ class LobbyServer {
       case 'SETMAP': { // set the map
         if (!client.state.loggedIn) return;
         let battleToSetMap;
-        let mapToSet;
         let mapId;
         try {
           battleToSetMap = message['parameters']['battleName'];
-          mapToSet = message['parameters']['map'];
+          // mapToSet = message['parameters']['map'];
           mapId = message['parameters']['mapId'];
         } catch (e) {
           // eslint-disable-next-line max-len
@@ -572,7 +571,7 @@ class LobbyServer {
         this.rooms[battleToSetMap].getHoster()) {
           try {
             this.rooms[battleToSetMap].clearPoll();
-            this.rooms[battleToSetMap].setMap(mapToSet);
+            // this.rooms[battleToSetMap].setMap(mapToSet);
             this.rooms[battleToSetMap].setMapId(mapId);
           } catch (e) {
             console.log('NU', e);
@@ -636,7 +635,7 @@ class LobbyServer {
         server.logOutClient(client);
       }
     }
-    return setInterval(checkPing, 1000);
+    return setInterval(checkPing, 5000);
   }
 
 
