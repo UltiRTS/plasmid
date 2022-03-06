@@ -347,7 +347,7 @@ class LobbyServer {
           this.stateDump(ppl, 'LEAVEGAME', reqId);
         }
 
-        if (playerList.length === 0) {
+        if (playerList.length === 0 && this.rooms[battleToLeave].isStarted === false) {
           delete this.rooms[battleToLeave];
         }
 
@@ -676,6 +676,14 @@ class LobbyServer {
     // remove client from all battles
     this.processLoggedClient( client, {'action ': 'LEAVEBATTLE', 'parameters': {'battleName': client.state.battle}});
     console.log('leaving battle'+client.state.room);
+    if (client.state.room in this.rooms) {
+      this.rooms[client.state.room].removePlayer(client.state.username);
+      if (this.rooms[client.state.room].getPlayerCount()===0 &&
+        this.rooms[client.state.room].isStarted === false
+      ) {
+        delete this.rooms[client.state.room];
+      }
+    }
 
     client.close();
     delete this.players[client.state.username];
