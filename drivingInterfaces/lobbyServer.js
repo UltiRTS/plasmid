@@ -232,7 +232,8 @@ class LobbyServer {
           // console.log('chat id: '+this.chats[chatName].chat.id);
           // console.log('user id: '+client.state.id);
 
-          await this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.id, chatMsg);
+		console.log("client id: ", client.state.userID);
+          await this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.userID, chatMsg);
 
 
           const pplObjs=this.usernames2ClientObj(this.chats[chatName].clients);
@@ -362,10 +363,12 @@ class LobbyServer {
 
         const freundtoadd = message['parameters']['freund'];
         const username = client.state.username;
+		console.log("before data action");
         await this.dataManager.addConfirmation(username, freundtoadd+'has requested you to be their friend', 'friend', freundtoadd);
         this.clientSendNotice(client, 'success', 'sent request');
 
         this.stateDump(client, 'ADDFREUND', reqId);
+		console.log("freidn added");
 
 
         break;
@@ -552,7 +555,7 @@ class LobbyServer {
         let battleToSetMap;
         let mapId;
         try {
-          battleToSetMap = message['parameters']['battleName'];
+          battleToSetMap = message['parameters']['battleToSetMap'];
           // mapToSet = message['parameters']['map'];
           mapId = message['parameters']['mapId'];
         } catch (e) {
@@ -578,7 +581,7 @@ class LobbyServer {
           } // hackery going on
         }
 
-        const playerList = this.rooms[battleToSetTeam].getPlayerList();
+        const playerList = this.rooms[battleToSetMap].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETMAP', reqId);

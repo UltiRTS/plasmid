@@ -3,7 +3,7 @@ const knexConf = {
   client: 'sqlite3',
   useNullAsDefault: true,
   connection: {
-    filename: 'test.db',
+    filename: '/opt/plasmid/test.db',
   },
   pool: {
     afterCreate: (conn, cb) =>
