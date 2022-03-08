@@ -232,7 +232,7 @@ class LobbyServer {
           // console.log('chat id: '+this.chats[chatName].chat.id);
           // console.log('user id: '+client.state.id);
 
-		console.log("client id: ", client.state.userID);
+          console.log('client id: ', client.state.userID);
           await this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.userID, chatMsg);
 
 
@@ -363,12 +363,10 @@ class LobbyServer {
 
         const freundtoadd = message['parameters']['freund'];
         const username = client.state.username;
-		console.log("before data action");
         await this.dataManager.addConfirmation(username, freundtoadd+'has requested you to be their friend', 'friend', freundtoadd);
         this.clientSendNotice(client, 'success', 'sent request');
 
         this.stateDump(client, 'ADDFREUND', reqId);
-		console.log("freidn added");
 
 
         break;
@@ -421,7 +419,6 @@ class LobbyServer {
       /* room related cmds, might require poll!*/
       case 'STARTGAME': { // set isStarted to true and let everyone else know
         if (!client.state.loggedIn) return;
-        let battleToStart;
         try {
           battleToStart = message['parameters']['battleName'];
         } catch (e) {
@@ -546,6 +543,29 @@ class LobbyServer {
         const playerListObj= this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETTEAM', reqId);
+        }
+
+        break;
+      }
+
+      case 'SETAIHOSTER': {
+        try {
+          const aiHoster = message['parameters'].aiHoster;
+          if (!client.state.room) throw new Error('joined no room');
+          if (!(aiHoster in this.rooms[client.state.room].getPlayers())) throw new Error('aiHoster not in room');
+
+          const room = this.rooms[client.state.room];
+          room.addPoll(client.state.username, action);
+
+          if ( room.hoster === client.state.username ||
+            room.getPollCount(action) >= room.getPlayerCount()/2) {
+            room.setHoster(aiHoster);
+            room.clearPoll(action);
+          }
+
+          this.rooms[client.state.room].setAIHoster(aiHoster);
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'invalid ai hoster');
         }
 
         break;
