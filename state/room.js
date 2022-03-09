@@ -19,10 +19,12 @@ class RoomState {
   password='';
   isStarted=false;
   responsibleAutohost='127.0.0.1';
+  aiHoster='';
 
 
   constructor(title, hoster='default', mapId='12345', ID=0, password='') {
     this.hoster = hoster;
+    this.aiHoster = hoster;
     this.players[hoster]={'isSpec': false, 'team': 'A', 'hasmap': true};
     this.title=title;
     this.mapId=mapId;
@@ -39,6 +41,10 @@ class RoomState {
       }
       return result;
     }
+  }
+
+  setAIHoster(playerName) {
+    this.aiHoster = playerName;
   }
 
   setPlayer(playerName, team, isSpec=false, hasmap=true) {
@@ -265,9 +271,12 @@ class RoomState {
         isAI: false,
         isChicken: false,
         isSpectator: this.players[player].isSpec,
-        isLeader: playerName == this.hoster,
+        isLeader: playerName == this.aiHoster,
         team: team,
       };
+      // ai hoster id
+      if (playerName === this.aiHoster) engineLaunchObj.aiHoster = count;
+
       count++;
     }
     // the below handles AI configs
