@@ -550,20 +550,27 @@ class LobbyServer {
 
       case 'SETAIHOSTER': {
         try {
-          const aiHoster = message['parameters'].aiHoster;
+          // is a Array of usernames
+          const aiHosters = message['parameters'].aiHosters;
           if (!client.state.room) throw new Error('joined no room');
-          if (!(aiHoster in this.rooms[client.state.room].getPlayers())) throw new Error('aiHoster not in room');
 
-          const room = this.rooms[client.state.room];
-          room.addPoll(client.state.username, action);
-
-          if ( room.hoster === client.state.username ||
-            room.getPollCount(action) >= room.getPlayerCount()/2) {
-            room.setHoster(aiHoster);
-            room.clearPoll(action);
+          const players = this.rooms[client.state.room].getPlayers();
+          for (const hoster of aiHosters) {
+            if (!players.includes(hoster)) {
+              throw new Error('invalid hoster');
+            }
           }
 
-          this.rooms[client.state.room].setAIHoster(aiHoster);
+
+          const room = this.rooms[client.state.room];
+          const aiHosterAction = action + JSON.stringify(aiHosters);
+          room.addPoll(client.state.username, aiHosterAction);
+
+          if ( room.hoster === client.state.username ||
+            room.getPollCount(aiHosterAction) >= room.getPlayerCount()/2) {
+            room.setAIHoster(aiHosters);
+            room.clearPoll(aiHosterAction);
+          }
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid ai hoster');
         }

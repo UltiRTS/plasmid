@@ -43,8 +43,8 @@ class RoomState {
     }
   }
 
-  setAIHoster(playerName) {
-    this.aiHoster = playerName;
+  setAIHoster(hosters) {
+    this.aiHoster = hosters;
   }
 
   setPlayer(playerName, team, isSpec=false, hasmap=true) {
