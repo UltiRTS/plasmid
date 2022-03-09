@@ -9,6 +9,7 @@ const {RoomState} = require('../state/room');
 
 
 const {clearInterval} = require('timers');
+const { AutohostManager } = require('./autohostManager');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
@@ -310,7 +311,8 @@ class LobbyServer {
         } catch {
           this.rooms[battleToJoin]=new RoomState(battleToJoin, client.state.username, '9440', Object.keys(this.rooms).length);
           this.rooms[battleToJoin].setRoomName(battleToJoin);
-          const autohostIPNum=this.loadBalance();
+          const autohostNum=this.loadBalance();
+          const autohostIPNum=autohostServer.autohostIDtoIP(autohostNum)
           this.rooms[battleToJoin].setResponsibleAutohost(autohostIPNum);
         }
         client.state.joinRoom(battleToJoin);
@@ -751,7 +753,7 @@ class LobbyServer {
    * @return {Number}
    */
   loadBalance() {
-    return '127.0.0.1';
+    return 0;
   }
 }
 

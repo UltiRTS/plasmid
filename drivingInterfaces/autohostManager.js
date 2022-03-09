@@ -12,9 +12,9 @@ class AutohostManager {
    *
    * @param {Array} availableServers
    */
-  constructor(allowedClients) {
+  constructor(allowedClients, selfIP) {
     const server=this;
-    initAutohostServerNetwork(allowedClients);
+    initAutohostServerNetwork(allowedClients, selfIP);
 
 
     eventEmitter.on('connectionFromAutohost', function(clients) {
@@ -72,6 +72,11 @@ class AutohostManager {
         return autohost;
       }
     }
+  }
+
+  autohostIDtoIP(autohostID) {
+    const autohosts=Array.from(this.clients);
+    return autohosts[autohostID].ip;
   }
 }
 
