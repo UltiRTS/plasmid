@@ -159,7 +159,7 @@ class LobbyServer {
       case 'serverEnding':
         playerList = this.rooms[roomTitle].getPlayers();
         playerListObj= this.usernames2ClientObj(playerList);
-        this.rooms[roomTitle].clearPoll();
+        this.rooms[roomTitle].clearPoll();;
         this.rooms[roomTitle].configureToStop();
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'EXITGAME');
@@ -323,6 +323,29 @@ class LobbyServer {
         }
         break;
       }
+      case 'haveMap': {
+        if (!client.state.loggedIn) return;
+        let mapToHave;
+        try {
+          mapToHave = message['parameters']['mapName'];
+        }
+        catch (e) {
+          this.clientSendNotice(client, 'invalid map name');
+        }
+        client.state.reportHaveMap(mapToHave);
+        const battle = client.state.getRoom();
+        if (battle in this.rooms) {
+          const playerList = this.rooms[battle].getPlayers();
+          const playerListObj= this.usernames2ClientObj(playerList);
+          for (const ppl of playerListObj) {
+            this.stateDump(ppl, 'haveMap', reqId);
+          }
+          break;
+        
+        } else {
+          break;
+        }
+      }
       case 'LEAVEGAME': { // leave a game
         if (!client.state.loggedIn) return;
         console.log('received leaving game req');
@@ -421,6 +444,7 @@ class LobbyServer {
       /* room related cmds, might require poll!*/
       case 'STARTGAME': { // set isStarted to true and let everyone else know
         if (!client.state.loggedIn) return;
+        let battleToStart;
         try {
           battleToStart = message['parameters']['battleName'];
         } catch (e) {
@@ -488,7 +512,7 @@ class LobbyServer {
         client.state.username ==
         this.rooms[battleToSetTeam].getHoster()) {
           try {
-            this.rooms[battleToSetTeam].clearPoll();
+            this.rooms[battleToSetTeam].clearPoll(action);;
             if (teamToSet=='-1'&&isCircuit) {
               try {
                 this.rooms[battleToSetTeam].removeAI(playerToSetTeam);
@@ -595,7 +619,7 @@ class LobbyServer {
         client.state.username ==
         this.rooms[battleToSetMap].getHoster()) {
           try {
-            this.rooms[battleToSetMap].clearPoll();
+            this.rooms[battleToSetMap].clearPoll(action);
             // this.rooms[battleToSetMap].setMap(mapToSet);
             this.rooms[battleToSetMap].setMapId(mapId);
           } catch (e) {
@@ -750,11 +774,26 @@ class LobbyServer {
 
   getAllGames() {
     const games = [];
+    
+
+
 
     // eslint-disable-next-line guard-for-in
     for (const battle in this.rooms) {
+
+      const mapOwningPlayersList = [];  // this block here checks if the map is currently retireved by a player in this room
+      const playerList = this.rooms[battle].getPlayers();
+      for (const player of playerList) {
+        if (player.includes(this.rooms[battle].getMap()))
+        {
+          mapOwningPlayersList.push(player);
+        }
+      }
+
+
       games.push({
         'polls': this.rooms[battle].getPolls(),
+        'mapOwningPlayers': mapOwningPlayersList,
         'battleName': this.rooms[battle].getTitle(),
         'isStarted': this.rooms[battle].checkStarted(),
         'players': {'AIs': this.rooms[battle].ais, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens},

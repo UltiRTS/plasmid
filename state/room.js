@@ -172,8 +172,11 @@ class RoomState {
   /**
    * @param {String} actionName clears the player names under this action
    */
-  clearPoll(actionName) {
-    if (this.polls.hasOwnProperty(actionName)) {
+  clearPoll(actionName = 'aNew') {
+    if (actionName == 'aNew') {
+      this.polls = {};
+    }
+    else{
       this.polls[actionName].clear();
     }
   }
