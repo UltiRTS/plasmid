@@ -10,6 +10,7 @@ class ClientState {
   chatMsg = null;
   userID='';
   notifications = [];
+  ownedMaps=[]
 
   constructor(options={
     username: '',
@@ -17,6 +18,7 @@ class ClientState {
     id: -1,
     freunds: [],
     notifications: [],
+    ownedMaps: [],
   }) {
     this.username = options.username;
     this.accLevel = options.accLevel;
@@ -24,10 +26,15 @@ class ClientState {
     this.loggedIn = true;
     this.freunds=options.freunds;
     this.notifications=options.notifications;
+    this.ownedMaps=options.ownedMaps;
   }
 
   login() {
     this.loggedIn = true;
+  }
+
+  reportHaveMap(mapName) {
+    this.ownedMaps.push(mapName);
   }
 
   writeUserID(id) {
