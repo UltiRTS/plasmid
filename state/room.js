@@ -19,12 +19,12 @@ class RoomState {
   password='';
   isStarted=false;
   responsibleAutohost='127.0.0.1';
-  aiHoster='';
+  aiHosters=[];
 
 
   constructor(title, hoster='default', mapId='12345', ID=0, password='') {
     this.hoster = hoster;
-    this.aiHoster = hoster;
+    this.aiHosters = [hoster];
     this.players[hoster]={'isSpec': false, 'team': 'A', 'hasmap': true};
     this.title=title;
     this.mapId=mapId;
@@ -175,8 +175,7 @@ class RoomState {
   clearPoll(actionName = 'aNew') {
     if (actionName == 'aNew') {
       this.polls = {};
-    }
-    else{
+    } else {
       this.polls[actionName].clear();
     }
   }
@@ -229,6 +228,7 @@ class RoomState {
     engineLaunchObj['team']={};
 
     engineLaunchObj['mapId'] = this.mapId;
+    engineLaunchObj['aiHosters'] = [];
 
     const teamMapping = {};
     let teamCount = 0;
@@ -277,9 +277,10 @@ class RoomState {
         isLeader: playerName == this.aiHoster,
         team: team,
       };
-      // ai hoster id
-      if (playerName === this.aiHoster) engineLaunchObj.aiHoster = count;
 
+      if (player in this.aiHosters) {
+        engineLaunchObj['aiHosters'].push(count);
+      }
       count++;
     }
     // the below handles AI configs

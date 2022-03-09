@@ -9,7 +9,7 @@ const {RoomState} = require('../state/room');
 
 
 const {clearInterval} = require('timers');
-const { AutohostManager } = require('./autohostManager');
+const {AutohostManager} = require('./autohostManager');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
@@ -159,7 +159,7 @@ class LobbyServer {
       case 'serverEnding':
         playerList = this.rooms[roomTitle].getPlayers();
         playerListObj= this.usernames2ClientObj(playerList);
-        this.rooms[roomTitle].clearPoll();;
+        this.rooms[roomTitle].clearPoll(); ;
         this.rooms[roomTitle].configureToStop();
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'EXITGAME');
@@ -312,7 +312,7 @@ class LobbyServer {
           this.rooms[battleToJoin]=new RoomState(battleToJoin, client.state.username, '9440', Object.keys(this.rooms).length);
           this.rooms[battleToJoin].setRoomName(battleToJoin);
           const autohostNum=this.loadBalance();
-          const autohostIPNum=autohostServer.autohostIDtoIP(autohostNum)
+          const autohostIPNum=autohostServer.autohostIDtoIP(autohostNum);
           this.rooms[battleToJoin].setResponsibleAutohost(autohostIPNum);
         }
         client.state.joinRoom(battleToJoin);
@@ -341,7 +341,6 @@ class LobbyServer {
             this.stateDump(ppl, 'haveMap', reqId);
           }
           break;
-        
         } else {
           break;
         }
@@ -512,7 +511,7 @@ class LobbyServer {
         client.state.username ==
         this.rooms[battleToSetTeam].getHoster()) {
           try {
-            this.rooms[battleToSetTeam].clearPoll(action);;
+            this.rooms[battleToSetTeam].clearPoll(action); ;
             if (teamToSet=='-1'&&isCircuit) {
               try {
                 this.rooms[battleToSetTeam].removeAI(playerToSetTeam);
@@ -781,14 +780,11 @@ class LobbyServer {
 
   getAllGames() {
     const games = [];
-    
-
 
 
     // eslint-disable-next-line guard-for-in
     for (const battle in this.rooms) {
-
-      const mapOwningPlayersList = [];  // this block here checks if the map is currently retireved by a player in this room
+      const mapOwningPlayersList = []; // this block here checks if the map is currently retireved by a player in this room
       const playerList = this.rooms[battle].getPlayers();
       for (const player of playerList) {
         if (player.includes(this.rooms[battle].getMap()))
