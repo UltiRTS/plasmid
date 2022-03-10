@@ -218,7 +218,7 @@ class RoomState {
    * @return {Object} for engine launch
    */
   configureToStart() {
-    this.isStarted=true;
+    // this.isStarted=true;
     this.poll={};
 
     const engineLaunchObj = {};

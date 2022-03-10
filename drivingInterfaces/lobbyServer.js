@@ -143,18 +143,21 @@ class LobbyServer {
   }
 
   processAutohost(action, parameters) {
+    console.log(action);
     console.log(parameters);
-    console.log(parameters.title);
     const roomTitle=parameters['title'];
     let playerList;
     let playerListObj;
     switch (action) {
       case 'serverStarted':
+        playerList = this.rooms[roomTitle].isStarted = true;
         playerList = this.rooms[roomTitle].getPlayers();
         playerListObj= this.usernames2ClientObj(playerList);
+        console.log(playerListObj);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'STARTGAME');
         }
+        // console.log('informing lobbies for game start!!!!!!!')
         break;
       case 'serverEnding':
         playerList = this.rooms[roomTitle].getPlayers();
