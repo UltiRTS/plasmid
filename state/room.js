@@ -142,6 +142,12 @@ class RoomState {
     }
     this.polls[actionName].add(playerName);
   }
+  // remove all polls this user has made
+  removePoll(playerName){
+    for (const poll in this.polls) {
+      this.polls[poll].delete(playerName);
+    }
+  }
 
   // get poll count
   /**

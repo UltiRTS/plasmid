@@ -367,6 +367,9 @@ class LobbyServer {
           return;
         } // hackery going on
         client.state.leaveRoom(battleToLeave);
+
+        this.rooms[battleToLeave].removePoll(client.state.username);
+
         const playerList = this.rooms[battleToLeave].getPlayers();
         const playerListObj= this.usernames2ClientObj(playerList);
 
