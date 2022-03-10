@@ -274,7 +274,6 @@ class RoomState {
         isAI: false,
         isChicken: false,
         isSpectator: this.players[player].isSpec,
-        isLeader: playerName == this.aiHoster,
         team: team,
       };
 
@@ -293,7 +292,6 @@ class RoomState {
         isAI: true,
         isChicken: false,
         isSpectator: false,
-        isLeader: false,
         team: teamMapping[this.ais[AI].team],
       };
       count++;
@@ -307,7 +305,6 @@ class RoomState {
         isAI: false,
         isChicken: true,
         isSpectator: false,
-        isLeader: false,
         team: teamMapping[this.chickens[chicken].team],
       };
       count++;

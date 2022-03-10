@@ -378,6 +378,7 @@ class LobbyServer {
 
         // let the client that left know
         this.stateDump(client, 'LEAVEGAME', reqId);
+        break;
       }
       case 'ADDFREUND': {
         console.log('friend', message);
