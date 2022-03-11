@@ -2,13 +2,13 @@
 /* eslint-disable guard-for-in */
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-const {initLobbyServerNetwork} = require('../lib/lobbyServerNetwork');
+const { initLobbyServerNetwork } = require('../lib/lobbyServerNetwork');
 // const ClientState = require('./clientState').default;
-const {ClientState} = require('../state/client');
-const {RoomState} = require('../state/room');
+const { ClientState } = require('../state/client');
+const { RoomState } = require('../state/room');
 
 
-const {clearInterval} = require('timers');
+const { clearInterval } = require('timers');
 // const {AutohostManager} = require('./autohostManager');
 // const eventEmitter = new EventEmitter()
 
@@ -20,14 +20,14 @@ class LobbyServer {
   constructor(port, dataManager) {
     this.dataManager = dataManager;
     // uncomment below for deving purposes
-    const {knexConf} = require('../config');
-    const {DataManager} = require('../lib/dataManager');
+    const { knexConf } = require('../config');
+    const { DataManager } = require('../lib/dataManager');
     this.dataManager = new DataManager(knexConf);
 
     console.log('lobby server started!');
     initLobbyServerNetwork(port);
     const server = this;
-    eventEmitter.on('commandFromClient', async function(client, message) {
+    eventEmitter.on('commandFromClient', async function (client, message) {
       // unlloged in, we log it in and check if the client agreed to the contract
       // when registering; if not, we reprompt the contract
       if (!sanityCheckClient()) return;
@@ -36,9 +36,9 @@ class LobbyServer {
         const password = message['parameters']['passwd'];
         server.dataManager.login(username, password).then((res) => {
           console.log('logining');
-          server.dataManager.queryUser(username).then((user)=>{
+          server.dataManager.queryUser(username).then((user) => {
             server.dataManager.regConfirmed(user.username).then(async (confirmed) => {
-              if (! confirmed) {
+              if (!confirmed) {
                 server.clientSendNotice(client, 'warning', 'account not confirmed'); // the client is established, but not logged in. It will only have access to limited commands
               } else if (res === 'verified') {
                 const freundslist = await server.dataManager.getFriends(username);
@@ -73,11 +73,11 @@ class LobbyServer {
                 server.stateDump(client, 'LOGIN');
                 console.log('logging in');
               }
-            }).catch((err) => {throw (err);});
-          }).catch((e)=>{
+            }).catch((err) => { throw (err); });
+          }).catch((e) => {
             throw e;
           });
-        }).catch((e)=>{
+        }).catch((e) => {
           server.clientSendNotice(client, 'error', 'Wrong username or password');
         });
       }
@@ -102,7 +102,7 @@ class LobbyServer {
           } else {
             server.clientSendNotice(client, 'error', res);
           }
-        }).catch((e)=>{
+        }).catch((e) => {
           server.clientSendNotice(client, 'error', 'Username already exists');
           console.log(e);
         });
@@ -129,12 +129,12 @@ class LobbyServer {
     });
 
 
-    eventEmitter.on('clearFromLobbyMemory', function(client) {
+    eventEmitter.on('clearFromLobbyMemory', function (client) {
       console.log('logging out this client', client.state.username);
       server.logOutClient(client);
     });
 
-    eventEmitter.on('commandFromAutohost', function(client, message) {
+    eventEmitter.on('commandFromAutohost', function (client, message) {
       // do something with autohost incoming interface msg
       // const roomID = message.parameters.roomID;
       // message=JSON.parse(message);
@@ -145,14 +145,14 @@ class LobbyServer {
   processAutohost(action, parameters) {
     console.log(action);
     console.log(parameters);
-    const roomTitle=parameters['title'];
+    const roomTitle = parameters['title'];
     let playerList;
     let playerListObj;
     switch (action) {
       case 'serverStarted':
         playerList = this.rooms[roomTitle].isStarted = true;
         playerList = this.rooms[roomTitle].getPlayers();
-        playerListObj= this.usernames2ClientObj(playerList);
+        playerListObj = this.usernames2ClientObj(playerList);
         console.log(playerListObj);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'STARTGAME');
@@ -161,8 +161,8 @@ class LobbyServer {
         break;
       case 'serverEnding':
         playerList = this.rooms[roomTitle].getPlayers();
-        playerListObj= this.usernames2ClientObj(playerList);
-        this.rooms[roomTitle].clearPoll(); ;
+        playerListObj = this.usernames2ClientObj(playerList);
+        this.rooms[roomTitle].clearPoll();;
         this.rooms[roomTitle].configureToStop();
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'EXITGAME');
@@ -172,13 +172,16 @@ class LobbyServer {
   }
 
 
-  async processLoggedClient(client, message) {
+  processLoggedClient(client, message) {
     const action = message['action'];
     const reqId = message['reqId'];
+    console.log('process logged in triggered!')
+    console.log(message);
+    console.log('action:', action);
     switch (action) {
       case 'PONG': {
         client.respondedKeepAlive = true;
-        client.connectivity=10;
+        client.connectivity = 10;
         break;
       }
       case 'JOINCHAT': {
@@ -191,28 +194,26 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid chat name');
         }
 
-        if (!(chatToJoin in this.chats))
-        {
-          const chat = await this.dataManager.createChat(chatToJoin, 'chat', '', '');
-          this.chats[chatToJoin] = {
-            chat,
-            clients: [],
-          };
-        }
-        // console.log(Object.keys(this.chats));
+        if (!(chatToJoin in this.chats)) {
+          const server = this;
+          this.dataManager.createChat(chatToJoin, 'chat', '', '').then((chat) => {
+            server.chats[chatToJoin] = {
+              chat,
+              clients: [],
+            };
+            console.log(server.chats[chatToJoin].clients);
+            if (!(server.chats[chatToJoin].clients.includes(client.state.username))) {
+              console.log('actually joining chat');
+              server.chats[chatToJoin].clients.push(client.state.username);
+            }
+            client.state.joinChat(chatToJoin);
+            const usersinchat = server.usernames2ClientObj(server.chats[chatToJoin].clients);
+            for (const ppl of usersinchat) {
+              // now let everyone else know
+              server.stateDump(ppl, 'JOINCHAT', reqId);
+            }
+          })
 
-        // if the client is not in that chat, push it
-        console.log(this.chats[chatToJoin].clients);
-        if (!(this.chats[chatToJoin].clients.includes(client.state.username)))
-        {
-          console.log('actually joining chat');
-          this.chats[chatToJoin].clients.push(client.state.username);
-        }
-        client.state.joinChat(chatToJoin);
-        const usersinchat = this.usernames2ClientObj(this.chats[chatToJoin].clients);
-        for (const ppl of usersinchat) {
-          // now let everyone else know
-          this.stateDump(ppl, 'JOINCHAT', reqId);
         }
 
         break;
@@ -227,7 +228,7 @@ class LobbyServer {
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
-        if (chatMsg=='') return;
+        if (chatMsg == '') return;
         // console.log(channelName);
         // console.log(this.chats);
         // console.log(this.chats[channelName].clients);
@@ -237,28 +238,23 @@ class LobbyServer {
           // console.log('user id: '+client.state.id);
 
           console.log('client id: ', client.state.userID);
-          await this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.userID, chatMsg);
+          const server = this;
+          this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.userID, chatMsg).then(() => {
+            const pplObjs = this.usernames2ClientObj(server.chats[chatName].clients);
+            for (const ppl of pplObjs) {
+              // now let everyone else know
+              // console.log('sending chat to ' + ppl.state.username);
+              ppl.state.writeChatMsg({
+                'author': client.state.username,
+                'msg': chatMsg,
+                'chatName': chatName,
+              });
+              server.stateDump(ppl, 'SAYCHAT', reqId);
+            }
+
+          });
 
 
-          const pplObjs=this.usernames2ClientObj(this.chats[chatName].clients);
-          for (const ppl of pplObjs) {
-            // now let everyone else know
-            // console.log('sending chat to ' + ppl.state.username);
-            ppl.state.writeChatMsg({
-              'author': client.state.username,
-              'msg': chatMsg,
-              'chatName': chatName,
-            });
-            this.stateDump(ppl, 'SAYCHAT', reqId);
-            // console.log(ppl.state.chatMsg);
-
-            // console.log(ppl.state.chatMsg);
-            // TODO: add autohost msg relay
-            // if (this.rooms.hasOwnProperty(channelName)) {
-            //   const roomObj = this.rooms[channelName];
-            //   autohostClient.autohostMgrSayBattle(roomObj, msg);
-            // }
-          }
         } else {
           this.stateDump(client, 'SAYCHAT', reqId);
         }
@@ -277,19 +273,18 @@ class LobbyServer {
 
         try {
           this.chats[chatToLeave].clients
-              .splice(this.chats[chatToLeave].clients.indexOf(client), 1);
-          // console.log('LEAVING CHAT', chatToLeave);
-          // console.log(this.chats);
-        } catch {
-          // console.log('NU');
+            .splice(this.chats[chatToLeave].clients.indexOf(client), 1);
+            client.state.leaveChat(chatToLeave);
+            this.stateDump(client, 'LEAVECHAT', reqId);
+            const pplObjs = this.usernames2ClientObj(this.chats[chatToLeave].clients);
+            for (const ppl of pplObjs) {
+              this.stateDump(ppl, 'LEAVECHAT', reqId);
+            }
+        } catch(e) {
+          console.log(e);
         } // hackery going on
         // remove this user from the chat's list of users
-        client.state.leaveChat(chatToLeave);
-        this.stateDump(client, 'LEAVECHAT', reqId);
-        const pplObjs=this.usernames2ClientObj(this.chats[chatToLeave].clients);
-        for (const ppl of pplObjs) {
-          this.stateDump(ppl, 'LEAVECHAT', reqId);
-        }
+
         break;
       }
 
@@ -297,7 +292,7 @@ class LobbyServer {
       case 'JOINGAME': { // join a game
         if (!client.state.loggedIn) return;
         let battleToJoin;
-        const username=client.state.username;
+        const username = client.state.username;
         try { // catch malformed request
           battleToJoin = message['parameters']['battleName'];
         } catch (e) {
@@ -306,7 +301,7 @@ class LobbyServer {
         }
 
         // if already in a game, leave it
-        if (client.state.room!=null) {
+        if (client.state.room != null) {
           this.rooms[client.state.getRoom()].removePlayer(client.state.username);
         }
 
@@ -314,10 +309,10 @@ class LobbyServer {
         try { // catch new room
           this.rooms[battleToJoin].setPlayer(username, 'A');
         } catch {
-          this.rooms[battleToJoin]=new RoomState(battleToJoin, client.state.username, '9440', Object.keys(this.rooms).length);
+          this.rooms[battleToJoin] = new RoomState(battleToJoin, client.state.username, '9440', Object.keys(this.rooms).length);
           this.rooms[battleToJoin].setRoomName(battleToJoin);
-          const autohostNum=this.loadBalance();
-          const autohostIPNum=autohostServer.autohostIDtoIP(autohostNum);
+          const autohostNum = this.loadBalance();
+          const autohostIPNum = autohostServer.autohostIDtoIP(autohostNum);
           this.rooms[battleToJoin].setResponsibleAutohost(autohostIPNum);
         }
         client.state.joinRoom(battleToJoin);
@@ -341,7 +336,7 @@ class LobbyServer {
         const battle = client.state.getRoom();
         if (battle in this.rooms) {
           const playerList = this.rooms[battle].getPlayers();
-          const playerListObj= this.usernames2ClientObj(playerList);
+          const playerListObj = this.usernames2ClientObj(playerList);
           for (const ppl of playerListObj) {
             this.stateDump(ppl, 'haveMap', reqId);
           }
@@ -354,6 +349,7 @@ class LobbyServer {
         console.log('LEAVEGAME');
         if (!client.state.loggedIn) return;
         console.log('received leaving game req');
+        console.log(message['parameters'])
         let battleToLeave;
 
         try {
@@ -374,7 +370,7 @@ class LobbyServer {
         this.rooms[battleToLeave].removePoll(client.state.username);
 
         const playerList = this.rooms[battleToLeave].getPlayers();
-        const playerListObj= this.usernames2ClientObj(playerList);
+        const playerListObj = this.usernames2ClientObj(playerList);
 
 
         for (const ppl of playerListObj) {
@@ -400,10 +396,14 @@ class LobbyServer {
 
         const freundtoadd = message['parameters']['freund'];
         const username = client.state.username;
-        await this.dataManager.addConfirmation(username, freundtoadd+'has requested you to be their friend', 'friend', freundtoadd);
-        this.clientSendNotice(client, 'success', 'sent request');
+        const server = this;
+        this.dataManager.addConfirmation(username, freundtoadd + 'has requested you to be their friend', 'friend', freundtoadd).then(() => {
+          server.clientSendNotice(client, 'success', 'sent request');
 
-        this.stateDump(client, 'ADDFREUND', reqId);
+          server.stateDump(client, 'ADDFREUND', reqId);
+
+        })
+
 
 
         break;
@@ -413,42 +413,46 @@ class LobbyServer {
         let confirmationId;
         let acceptOrNot = false;
         let username;
+        const server=this;
         try {
           confirmationId = message['parameters']['id'];
           acceptOrNot = message['parameters']['isAccepted'];
           username = client.state.username;
           if (acceptOrNot) {
-            const res =
-                await this.dataManager.confirm(username, confirmationId);
-            if (res)
-            {
-              client.state.notifications = this.dataManager.getNotifications(username);
-              this.clientSendNotice(client, 'success', 'confirmed');
-              const whatIhaveConfirmed = await this.dataManager.getConfirmation(username, confirmationId);
-              switch (whatIhaveConfirmed.type)
-              {
-                case 'friend':
-                  const addRes = await this.dataManager.addFriend(username, whatIhaveConfirmed.parameters);
-                  try {
-                    if (addRes === 'added') {
-                      client.state.freunds.push({
-                        username: freundtoadd,
-                      });
-                    } else {
-                      this.clientSendNotice(client, 'error', addRes);
-                    }
-                  } catch (e) {
-                    console.log('frined', e);
-                    this.clientSendNotice(client, 'error', 'invalid freund');
-                  } // hackery going on
+            server.dataManager.confirm(username, confirmationId).then((res) => {
+              if (res) {
+                client.state.notifications = server.dataManager.getNotifications(username);
+                server.clientSendNotice(client, 'success', 'confirmed');
+                server.dataManager.getConfirmation(username, confirmationId).then((whatIhaveConfirmed) => {
+                  switch (whatIhaveConfirmed.type) {
+                    case 'friend':
+                      server.dataManager.addFriend(username, whatIhaveConfirmed.parameters).then((addRes) => {
+                        try {
+                          if (addRes === 'added') {
+                            client.state.freunds.push({
+                              username: freundtoadd,
+                            });
+                          } else {
+                            server.clientSendNotice(client, 'error', addRes);
+                          }
+                        } catch (e) {
+                          console.log('frined', e);
+                          server.clientSendNotice(client, 'error', 'invalid freund');
+                        } // hackery going on
+                      })
+
+                  }
+                })
+
               }
-            }
-            else {
-              this.clientSendNotice(client, 'error', res);
-            }
+              else {
+                server.clientSendNotice(client, 'error', res);
+              }
+            })
+
           }
         } catch (e) {
-          this.clientSendNotice(client, 'error', 'invalid confirmation');
+          server.clientSendNotice(client, 'error', 'invalid confirmation');
         }
         break;
       }
@@ -473,7 +477,7 @@ class LobbyServer {
 
         // if the poll is 50% or more, start the game
         if (this.rooms[battleToStart].getPollCount(action) >=
-        this.rooms[battleToStart].getPlayerCount() ||
+          this.rooms[battleToStart].getPlayerCount() ||
           client.state.username ==
           this.rooms[battleToStart].getHoster()) {
           try {
@@ -486,8 +490,8 @@ class LobbyServer {
         } else {
           // this.stateDump(reqId, client, 'STARTGAME');
           this.clientSendNotice(client,
-              'error',
-              'not enough players to start game');
+            'error',
+            'not enough players to start game');
         }
         // dont statedump at this moment
         // statedump for start is called upon autohost return in processautohost!
@@ -520,12 +524,12 @@ class LobbyServer {
         this.rooms[battleToSetTeam].addPoll(client.state.username, action);
 
         if (this.rooms[battleToSetTeam].getPollCount(action) >=
-        this.rooms[battleToSetTeam].getPlayerCount() ||
-        client.state.username ==
-        this.rooms[battleToSetTeam].getHoster()) {
+          this.rooms[battleToSetTeam].getPlayerCount() ||
+          client.state.username ==
+          this.rooms[battleToSetTeam].getHoster()) {
           try {
-            this.rooms[battleToSetTeam].clearPoll(action); ;
-            if (teamToSet=='-1'&&isCircuit) {
+            this.rooms[battleToSetTeam].clearPoll(action);;
+            if (teamToSet == '-1' && isCircuit) {
               try {
                 this.rooms[battleToSetTeam].removeAI(playerToSetTeam);
               }
@@ -536,11 +540,12 @@ class LobbyServer {
             else if (isCircuit) {
               console.log('setting circuit');
               try {
-                this.rooms[battleToSetTeam].setAI(playerToSetTeam, teamToSet);}
-              catch {}
+                this.rooms[battleToSetTeam].setAI(playerToSetTeam, teamToSet);
+              }
+              catch { }
             }
 
-            if (teamToSet=='-1'&&isChicken) {
+            if (teamToSet == '-1' && isChicken) {
               try {
                 this.rooms[battleToSetTeam].removeChicken(playerToSetTeam);
               }
@@ -551,10 +556,11 @@ class LobbyServer {
             else if (isChicken) {
               console.log('setting circuit');
               try {
-                this.rooms[battleToSetTeam].setChicken(playerToSetTeam, teamToSet);}
-              catch {}
+                this.rooms[battleToSetTeam].setChicken(playerToSetTeam, teamToSet);
+              }
+              catch { }
             }
-            if (!isCircuit&&!isChicken&&teamToSet=='-1') {
+            if (!isCircuit && !isChicken && teamToSet == '-1') {
               try {
                 this.rooms[battleToSetTeam].removePlayer(playerToSetTeam);
               }
@@ -562,23 +568,24 @@ class LobbyServer {
                 console.log('such ppl doesnt exist');
               }
             }
-            else if (!isCircuit&&!isChicken&&teamToSet!='-1') {
+            else if (!isCircuit && !isChicken && teamToSet != '-1') {
               try {
-                this.rooms[battleToSetTeam].setPlayer(playerToSetTeam, teamToSet);}
-              catch {}
+                this.rooms[battleToSetTeam].setPlayer(playerToSetTeam, teamToSet);
+              }
+              catch { }
             }
           } catch (e) {
             console.log('NU', e);
           } // hackery going on
         } else {
           this.clientSendNotice(client,
-              'error',
-              'not enough players to set team');
+            'error',
+            'not enough players to set team');
         }
 
 
         const playerList = this.rooms[battleToSetTeam].getPlayers();
-        const playerListObj= this.usernames2ClientObj(playerList);
+        const playerListObj = this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETTEAM', reqId);
         }
@@ -604,8 +611,8 @@ class LobbyServer {
           const aiHosterAction = action + JSON.stringify(aiHosters);
           room.addPoll(client.state.username, aiHosterAction);
 
-          if ( room.hoster === client.state.username ||
-            room.getPollCount(aiHosterAction) >= room.getPlayerCount()/2) {
+          if (room.hoster === client.state.username ||
+            room.getPollCount(aiHosterAction) >= room.getPlayerCount() / 2) {
             room.setAIHoster(aiHosters);
             room.clearPoll(aiHosterAction);
           }
@@ -634,9 +641,9 @@ class LobbyServer {
 
         // if the poll is 50% or more, start the game
         if (this.rooms[battleToSetMap].getPollCount(action) >=
-        this.rooms[battleToSetMap].getPlayerCount() ||
-        client.state.username ==
-        this.rooms[battleToSetMap].getHoster()) {
+          this.rooms[battleToSetMap].getPlayerCount() ||
+          client.state.username ==
+          this.rooms[battleToSetMap].getHoster()) {
           try {
             this.rooms[battleToSetMap].clearPoll(action);
             // this.rooms[battleToSetMap].setMap(mapToSet);
@@ -647,7 +654,7 @@ class LobbyServer {
         }
 
         const playerList = this.rooms[battleToSetMap].getPlayers();
-        const playerListObj= this.usernames2ClientObj(playerList);
+        const playerListObj = this.usernames2ClientObj(playerList);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'SETMAP', reqId);
         }
@@ -665,9 +672,9 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid room name');
         }
         if (this.rooms[battleToSetMap].getPollCount(action) >=
-        this.rooms[battleToSetMap].getPlayerCount() ||
-        client.state.username ==
-        this.rooms[battleToSetMap].getHoster()) {
+          this.rooms[battleToSetMap].getPlayerCount() ||
+          client.state.username ==
+          this.rooms[battleToSetMap].getHoster()) {
           try {
             this.rooms[roomName].clearPoll(action);
             this.rooms[roomName].setRoomNotes(notes);
@@ -690,9 +697,9 @@ class LobbyServer {
 
         // if the poll is 50% or more, exit the game
         if (this.rooms[battleToStop].getPollCount(action) >=
-        this.rooms[battleToStop].getPlayerCount() ||
-        client.state.username ==
-        this.rooms[battleToStop].getHoster()) {
+          this.rooms[battleToStop].getPlayerCount() ||
+          client.state.username ==
+          this.rooms[battleToStop].getHoster()) {
           try {
             autohostServer.killEngine(this.rooms[battleToStop]);
           } catch (e) {
@@ -700,8 +707,8 @@ class LobbyServer {
           } // hackery going on
         } else {
           this.clientSendNotice(client,
-              'error',
-              'not enough players to stop game');
+            'error',
+            'not enough players to stop game');
         }
         // notify players in processautohost!
       }
@@ -715,7 +722,7 @@ class LobbyServer {
   processPing(client) {
     const server = this;
     function checkPing() {
-      client.send(JSON.stringify({'action': 'PING'}));
+      client.send(JSON.stringify({ 'action': 'PING' }));
       if (!client.respondedKeepAlive) {
         client.connectivity--;
       } // deduct client hp if it hasnt responded the previous ping
@@ -723,7 +730,7 @@ class LobbyServer {
       client.respondedKeepAlive = false;
       if (client.connectivity <= 0) {
         client.emit('clearFromLobbyMemory');
-        server.logOutClient(client);
+        // server.logOutClient(client);
       }
     }
     return setInterval(checkPing, 5000);
@@ -732,7 +739,7 @@ class LobbyServer {
 
   clientSendNotice(client, type, msg) {
     client.send(JSON.stringify({
-      'action': 'NOTICE', 'parameters': {'type': type, 'msg': msg},
+      'action': 'NOTICE', 'parameters': { 'type': type, 'msg': msg },
     }));
   }
 
@@ -752,8 +759,7 @@ class LobbyServer {
   // or there will be memory leaks
   logOutClient(client) { // server inited disconnect
     // console.log('removing hb'+client.keepAlive);
-    if (!client.state)
-    {
+    if (!client.state) {
       console.log('not state found in client');
       return;
     }
@@ -761,18 +767,18 @@ class LobbyServer {
     console.log('clientstate:');
     console.log(client.state);
     for (const chat in client.state.chats) {
-      this.processLoggedClient(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
-      console.log('leaving chat'+chat);
+      this.processLoggedClient(client, { 'action': 'LEAVECHAT', 'parameters': { 'chatName': client.state.chats[chat] } });
+      console.log('leaving chat' + chat);
     }
-    console.log('leaving battle'+client.state.room);
-    this.processLoggedClient(client, {'action ': 'LEAVEGAME', 'parameters': {'battleName': client.state.battleName}});
+    console.log('leaving battle' + client.state.room);
+    this.processLoggedClient(client, { 'action': 'LEAVEGAME', 'parameters': { 'battleName': client.state.room} });
 
-   /* this.rooms[client.state.room].removePlayer(client.state.username);
-    if (this.rooms[client.state.room].getPlayerCount() === 0) {
-      delete this.rooms[client.state.room];
-    }*/
+    /* this.rooms[client.state.room].removePlayer(client.state.username);
+     if (this.rooms[client.state.room].getPlayerCount() === 0) {
+       delete this.rooms[client.state.room];
+     }*/
     // remove client from all battles
-    console.log('leaving battle'+client.state.room);
+    console.log('leaving battle' + client.state.room);
 
 
     client.close();
@@ -781,7 +787,7 @@ class LobbyServer {
 
   // set an event listener for client disconnect
 
-  stateDump(ppl, triggeredBy = 'DefaultTrigger', reqId='defaultReq') {
+  stateDump(ppl, triggeredBy = 'DefaultTrigger', reqId = 'defaultReq') {
     // TODO: should add a filter for messages delivering
 
     // get all games
@@ -798,7 +804,7 @@ class LobbyServer {
       'chatsIndex': chatIndex,
       'usrstats': ppl.state.getState(),
     };
-      // console.log(ppl.state.getState());
+    // console.log(ppl.state.getState());
     ppl.send(JSON.stringify({
       'id': reqId,
       'action': 'stateDump',
@@ -809,9 +815,9 @@ class LobbyServer {
   }
 
   getChatIndex() {
-    const chatDictToReturn={};
+    const chatDictToReturn = {};
     for (const chatName in this.chats) {
-      chatDictToReturn[chatName]={
+      chatDictToReturn[chatName] = {
         chatType: this.chats[chatName].chatType,
         chatDescription: this.chats[chatName].chatDescription,
         clients: this.chats[chatName].clients,
@@ -829,8 +835,7 @@ class LobbyServer {
       const mapOwningPlayersList = []; // this block here checks if the map is currently retireved by a player in this room
       const playerList = this.rooms[battle].getPlayers();
       for (const player of playerList) {
-        if (player.includes(this.rooms[battle].getMap()))
-        {
+        if (player.includes(this.rooms[battle].getMap())) {
           mapOwningPlayersList.push(player);
         }
       }
@@ -841,7 +846,7 @@ class LobbyServer {
         'mapOwningPlayers': mapOwningPlayersList,
         'battleName': this.rooms[battle].getTitle(),
         'isStarted': this.rooms[battle].checkStarted(),
-        'players': {'AIs': this.rooms[battle].ais, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens},
+        'players': { 'AIs': this.rooms[battle].ais, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens },
         'map': this.rooms[battle].getMap(),
         'port': this.rooms[battle].getPort(),
         'ip': this.rooms[battle].getResponsibleAutohost(),
