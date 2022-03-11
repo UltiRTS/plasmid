@@ -9,7 +9,7 @@ const {RoomState} = require('../state/room');
 
 
 const {clearInterval} = require('timers');
-const {AutohostManager} = require('./autohostManager');
+// const {AutohostManager} = require('./autohostManager');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
@@ -351,6 +351,7 @@ class LobbyServer {
         }
       }
       case 'LEAVEGAME': { // leave a game
+        console.log('LEAVEGAME');
         if (!client.state.loggedIn) return;
         console.log('received leaving game req');
         let battleToLeave;
@@ -757,16 +758,19 @@ class LobbyServer {
       return;
     }
     clearInterval(client.keepAlive);
-    // remove client from all chats
+    console.log('clientstate:');
+    console.log(client.state);
     for (const chat in client.state.chats) {
       this.processLoggedClient(client, {'action ': 'LEAVECHAT', 'parameters': {'chatName': chat}});
       console.log('leaving chat'+chat);
     }
+    console.log('leaving battle'+client.state.room);
+    this.processLoggedClient(client, {'action ': 'LEAVEGAME', 'parameters': {'battleName': client.state.battleName}});
 
-    this.rooms[client.state.room].removePlayer(client.state.username);
+   /* this.rooms[client.state.room].removePlayer(client.state.username);
     if (this.rooms[client.state.room].getPlayerCount() === 0) {
       delete this.rooms[client.state.room];
-    }
+    }*/
     // remove client from all battles
     console.log('leaving battle'+client.state.room);
 
