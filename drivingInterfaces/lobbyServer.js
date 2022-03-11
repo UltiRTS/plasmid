@@ -292,6 +292,9 @@ class LobbyServer {
         }
         break;
       }
+
+
+
       case 'JOINGAME': { // join a game
         if (!client.state.loggedIn) return;
         let battleToJoin;
@@ -647,6 +650,32 @@ class LobbyServer {
         }
         break;
       }
+      case 'setRoomNotes':{
+        if (!client.state.loggedIn) return;
+        let roomName;
+        let notes;
+        try {
+          roomName = message['parameters']['roomName'];
+          notes = message['parameters']['notes'];
+        }
+        catch (e) {
+          this.clientSendNotice(client, 'error', 'invalid room name');
+
+        }
+        if (this.rooms[battleToSetMap].getPollCount(action) >=
+        this.rooms[battleToSetMap].getPlayerCount() ||
+        client.state.username ==
+        this.rooms[battleToSetMap].getHoster()) {
+          try {
+            this.rooms[roomName].clearPoll(action);
+            this.rooms[roomName].setRoomNotes(notes);
+          } catch (e) {
+            console.log('NU', e);
+          } // hackery going on
+        }
+
+
+      }
       case 'EXITGAME': {// set isStarted to false and let everyone else know
         if (!client.state.loggedIn) return;
         let battleToStop;
@@ -812,6 +841,7 @@ class LobbyServer {
         'ip': this.rooms[battle].getResponsibleAutohost(),
         'id': this.rooms[battle].getID(),
         'engineToken': this.rooms[battle].engineToken,
+        'notes': this.rooms[battle].getRoomNotes(),
       });
     }
     return games;

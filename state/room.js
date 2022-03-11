@@ -7,6 +7,7 @@
  * @description for managing room
  */
 class RoomState {
+  roomNotes='<battle notes>'
   title='';
   hoster = '';
   mapId = 0;
@@ -41,6 +42,14 @@ class RoomState {
       }
       return result;
     }
+  }
+
+  setRoomNotes(notes) {
+    this.roomNotes = notes;
+  }
+
+  getRoomNotes() {
+    return this.roomNotes;
   }
 
   setAIHoster(hosters) {
