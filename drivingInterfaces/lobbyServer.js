@@ -130,7 +130,7 @@ class LobbyServer {
 
 
     eventEmitter.on('clearFromLobbyMemory', function(client) {
-      console.log('logging out this client');
+      console.log('logging out this client', client.state.username);
       server.logOutClient(client);
     });
 
@@ -294,7 +294,6 @@ class LobbyServer {
       }
 
 
-
       case 'JOINGAME': { // join a game
         if (!client.state.loggedIn) return;
         let battleToJoin;
@@ -381,7 +380,10 @@ class LobbyServer {
           this.stateDump(ppl, 'LEAVEGAME', reqId);
         }
 
+        console.log('Battle players: ', playerList);
+        console.log('room status: ', this.rooms[battleToLeave].isStarted);
         if (playerList.length === 0 && this.rooms[battleToLeave].isStarted === false) {
+          console.log('Deleteing game ', battleToLeave);
           delete this.rooms[battleToLeave];
         }
 
@@ -650,7 +652,7 @@ class LobbyServer {
         }
         break;
       }
-      case 'setRoomNotes':{
+      case 'setRoomNotes': {
         if (!client.state.loggedIn) return;
         let roomName;
         let notes;
@@ -660,7 +662,6 @@ class LobbyServer {
         }
         catch (e) {
           this.clientSendNotice(client, 'error', 'invalid room name');
-
         }
         if (this.rooms[battleToSetMap].getPollCount(action) >=
         this.rooms[battleToSetMap].getPlayerCount() ||
@@ -673,8 +674,6 @@ class LobbyServer {
             console.log('NU', e);
           } // hackery going on
         }
-
-
       }
       case 'EXITGAME': {// set isStarted to false and let everyone else know
         if (!client.state.loggedIn) return;
@@ -754,6 +753,7 @@ class LobbyServer {
     // console.log('removing hb'+client.keepAlive);
     if (!client.state)
     {
+      console.log('not state found in client');
       return;
     }
     clearInterval(client.keepAlive);
@@ -763,9 +763,11 @@ class LobbyServer {
       console.log('leaving chat'+chat);
     }
 
-
+    this.rooms[client.state.room].removePlayer(client.state.username);
+    if (this.rooms[client.state.room].getPlayerCount() === 0) {
+      delete this.rooms[client.state.room];
+    }
     // remove client from all battles
-    this.processLoggedClient( client, {'action ': 'LEAVEBATTLE', 'parameters': {'battleName': client.state.battle}});
     console.log('leaving battle'+client.state.room);
 
 

@@ -7,7 +7,7 @@
  * @description for managing room
  */
 class RoomState {
-  roomNotes='<battle notes>'
+  roomNotes='<battle notes>';
   title='';
   hoster = '';
   mapId = 0;
@@ -152,7 +152,7 @@ class RoomState {
     this.polls[actionName].add(playerName);
   }
   // remove all polls this user has made
-  removePoll(playerName){
+  removePoll(playerName) {
     for (const poll in this.polls) {
       this.polls[poll].delete(playerName);
     }

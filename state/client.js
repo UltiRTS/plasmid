@@ -10,7 +10,7 @@ class ClientState {
   chatMsg = null;
   userID='';
   notifications = [];
-  ownedMaps=[]
+  ownedMaps=[];
 
   constructor(options={
     username: '',
