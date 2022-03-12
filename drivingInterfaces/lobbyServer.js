@@ -2,13 +2,13 @@
 /* eslint-disable guard-for-in */
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-const {initLobbyServerNetwork} = require('../lib/lobbyServerNetwork');
+const { initLobbyServerNetwork } = require('../lib/lobbyServerNetwork');
 // const ClientState = require('./clientState').default;
-const {ClientState} = require('../state/client');
-const {RoomState} = require('../state/room');
+const { ClientState } = require('../state/client');
+const { RoomState } = require('../state/room');
 
 
-const {clearInterval} = require('timers');
+const { clearInterval } = require('timers');
 // const {AutohostManager} = require('./autohostManager');
 // const eventEmitter = new EventEmitter()
 
@@ -21,20 +21,24 @@ class LobbyServer {
     this.dataManager = dataManager;
     this.autohostManger = autohostManager;
     // uncomment below for deving purposes
-    const {knexConf} = require('../config');
-    const {DataManager} = require('../lib/dataManager');
+    const { knexConf } = require('../config');
+    const { DataManager } = require('../lib/dataManager');
     this.dataManager = new DataManager(knexConf);
 
     console.log('lobby server started!');
     initLobbyServerNetwork(port);
     const server = this;
-    eventEmitter.on('commandFromClient', async function(client, message) {
+    eventEmitter.on('commandFromClient', async function (client, message) {
       // unlloged in, we log it in and check if the client agreed to the contract
       // when registering; if not, we reprompt the contract
       if (!sanityCheckClient()) return;
       if (message['action'] == 'LOGIN') {
         const username = message['parameters']['usr'];
         const password = message['parameters']['passwd'];
+        if (server.players[username]) {
+          server.clientSendNotice(client, 'error', 'Username already exists');
+          return;
+        }
         server.dataManager.login(username, password).then((res) => {
           console.log('logining');
           server.dataManager.queryUser(username).then((user) => {
@@ -74,7 +78,7 @@ class LobbyServer {
                 server.stateDump(client, 'LOGIN');
                 console.log('logging in');
               }
-            }).catch((err) => {throw (err);});
+            }).catch((err) => { throw (err); });
           }).catch((e) => {
             throw e;
           });
@@ -130,12 +134,12 @@ class LobbyServer {
     });
 
 
-    eventEmitter.on('clearFromLobbyMemory', function(client) {
+    eventEmitter.on('clearFromLobbyMemory', function (client) {
       console.log('logging out this client', client.state.username);
       server.logOutClient(client);
     });
 
-    eventEmitter.on('commandFromAutohost', function(client, message) {
+    eventEmitter.on('commandFromAutohost', function (client, message) {
       // do something with autohost incoming interface msg
       // const roomID = message.parameters.roomID;
       // message=JSON.parse(message);
@@ -163,7 +167,7 @@ class LobbyServer {
       case 'serverEnding':
         playerList = this.rooms[roomTitle].getPlayers();
         playerListObj = this.usernames2ClientObj(playerList);
-        this.rooms[roomTitle].clearPoll(); ;
+        this.rooms[roomTitle].clearPoll();;
         this.rooms[roomTitle].configureToStop();
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'EXITGAME');
@@ -214,6 +218,16 @@ class LobbyServer {
               server.stateDump(ppl, 'JOINCHAT', reqId);
             }
           });
+        } else {
+
+          this.chats[chatToJoin].clients.push(client.state.username);
+
+          client.state.joinChat(chatToJoin);
+          const usersinchat = this.usernames2ClientObj(this.chats[chatToJoin].clients);
+          for (const ppl of usersinchat) {
+            // now let everyone else know
+            this.stateDump(ppl, 'JOINCHAT', reqId);
+          }
         }
 
         break;
@@ -270,7 +284,7 @@ class LobbyServer {
 
         try {
           this.chats[chatToLeave].clients
-              .splice(this.chats[chatToLeave].clients.indexOf(client), 1);
+            .splice(this.chats[chatToLeave].clients.indexOf(client), 1);
           client.state.leaveChat(chatToLeave);
           this.stateDump(client, 'LEAVECHAT', reqId);
           const pplObjs = this.usernames2ClientObj(this.chats[chatToLeave].clients);
@@ -440,7 +454,7 @@ class LobbyServer {
         let confirmationId;
         let acceptOrNot = false;
         let username;
-        const server=this;
+        const server = this;
         try {
           confirmationId = message['parameters']['id'];
           acceptOrNot = message['parameters']['isAccepted'];
@@ -514,8 +528,8 @@ class LobbyServer {
         } else {
           // this.stateDump(reqId, client, 'STARTGAME');
           this.clientSendNotice(client,
-              'error',
-              'not enough players to start game');
+            'error',
+            'not enough players to start game');
         }
         // dont statedump at this moment
         // statedump for start is called upon autohost return in processautohost!
@@ -552,7 +566,7 @@ class LobbyServer {
           client.state.username ==
           this.rooms[battleToSetTeam].getHoster()) {
           try {
-            this.rooms[battleToSetTeam].clearPoll(action); ;
+            this.rooms[battleToSetTeam].clearPoll(action);;
             if (teamToSet === '-1') {
               if (isCircuit) this.rooms[battleToSetTeam].removeAI(playerToSetTeam);
               else if (isChicken) this.rooms[battleToSetTeam].removeChicken(playerToSetTeam);
@@ -567,8 +581,8 @@ class LobbyServer {
           } // hackery going on
         } else {
           this.clientSendNotice(client,
-              'error',
-              'not enough players to set team');
+            'error',
+            'not enough players to set team');
         }
 
 
@@ -695,8 +709,8 @@ class LobbyServer {
           } // hackery going on
         } else {
           this.clientSendNotice(client,
-              'error',
-              'not enough players to stop game');
+            'error',
+            'not enough players to stop game');
         }
         // notify players in processautohost!
       }
@@ -709,7 +723,7 @@ class LobbyServer {
 
   processPing(client) {
     function checkPing() {
-      client.send(JSON.stringify({'action': 'PING'}));
+      client.send(JSON.stringify({ 'action': 'PING' }));
       if (!client.respondedKeepAlive) {
         client.connectivity--;
       } // deduct client hp if it hasnt responded the previous ping
@@ -726,7 +740,7 @@ class LobbyServer {
 
   clientSendNotice(client, type, msg) {
     client.send(JSON.stringify({
-      'action': 'NOTICE', 'parameters': {'type': type, 'msg': msg},
+      'action': 'NOTICE', 'parameters': { 'type': type, 'msg': msg },
     }));
   }
 
@@ -751,21 +765,22 @@ class LobbyServer {
       return;
     }
     clearInterval(client.keepAlive);
-    console.log('clientstate:');
-    console.log(client.state);
-    for (const chat in client.state.chats) {
-      this.processLoggedClient(client, {'action': 'LEAVECHAT', 'parameters': {'chatName': client.state.chats[chat]}});
+    // console.log('clientstate:');
+    // console.log(client.state.chats);
+    const deepFreezedChat = JSON.parse(JSON.stringify(client.state.chats))
+    for (const chat in deepFreezedChat) {
+      this.processLoggedClient(client, { 'action': 'LEAVECHAT', 'parameters': { 'chatName': deepFreezedChat[chat] } });
       console.log('leaving chat' + chat);
     }
     console.log('leaving battle' + client.state.room);
-    this.processLoggedClient(client, {'action': 'LEAVEGAME', 'parameters': {'battleName': client.state.room}});
+    try {
+      this.processLoggedClient(client, { 'action': 'LEAVEGAME', 'parameters': { 'battleName': client.state.room } });
+    }
+    catch {
+      console.log('no more battles');
+    }
 
-    /* this.rooms[client.state.room].removePlayer(client.state.username);
-     if (this.rooms[client.state.room].getPlayerCount() === 0) {
-       delete this.rooms[client.state.room];
-     }*/
-    // remove client from all battles
-    console.log('leaving battle' + client.state.room);
+
 
 
     client.close();
@@ -833,7 +848,7 @@ class LobbyServer {
         'mapOwningPlayers': mapOwningPlayersList,
         'battleName': this.rooms[battle].getTitle(),
         'isStarted': this.rooms[battle].checkStarted(),
-        'players': {'AIs': this.rooms[battle].ais, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens},
+        'players': { 'AIs': this.rooms[battle].ais, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens },
         'map': this.rooms[battle].getMap(),
         'port': this.rooms[battle].getPort(),
         'ip': this.rooms[battle].getResponsibleAutohost(),
