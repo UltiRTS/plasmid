@@ -17,8 +17,9 @@ class LobbyServer {
   rooms = {};
   players = {}; // holds all connected clients;
 
-  constructor(port, dataManager) {
+  constructor(port, dataManager, autohostManager) {
     this.dataManager = dataManager;
+    this.autohostManger = autohostManager;
     // uncomment below for deving purposes
     const {knexConf} = require('../config');
     const {DataManager} = require('../lib/dataManager');
@@ -319,6 +320,38 @@ class LobbyServer {
         }
         break;
       }
+      case 'MIDJOIN': {
+        if (!client.state.loggedIn) return;
+        let battleName;
+        let isSpec;
+        let team;
+        try {
+          battleName = message['parameters']['battleName'];
+          isSpec = message['parameters']['isSpec'];
+          team = message['parameters']['team'];
+
+          if (!(battleName in this.rooms)) throw new Error('invalid battle name');
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'no sufficient parameters');
+          break;
+        }
+
+        const room = this.rooms[battleName];
+
+        try {
+          const token = room.engineToken;
+          this.autohostManger.midJoin(room, {
+            playerName: client.state.username,
+            isSpec,
+            team,
+            token,
+          });
+        } catch (e) {
+          this.clientSendNotice(client, 'error', 'no engine token');
+          break;
+        }
+      }
+
       case 'haveMap': {
         if (!client.state.loggedIn) return;
         let mapToHave;
@@ -675,7 +708,6 @@ class LobbyServer {
   }
 
   processPing(client) {
-    const server = this;
     function checkPing() {
       client.send(JSON.stringify({'action': 'PING'}));
       if (!client.respondedKeepAlive) {

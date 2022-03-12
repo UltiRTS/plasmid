@@ -10,7 +10,8 @@ const {initAutohostServerNetwork} = require('../lib/autohostServerNetwork');
 class AutohostManager {
   /**
    *
-   * @param {Array} availableServers
+   * @param {Array} allowedClients
+   * @param {String} selfIP
    */
   constructor(allowedClients, selfIP) {
     const server=this;
@@ -77,6 +78,22 @@ class AutohostManager {
   autohostIDtoIP(autohostID) {
     const autohosts=Array.from(this.clients);
     return autohosts[autohostID].ip;
+  }
+
+  midJoin(roomObj, parameters) {
+    const autohostIP = roomObj.mgr;
+    console.log('mid join');
+    const autohosts = Array.from(this.clients);
+    try {
+      const autohost = this.autohostIPtoID(autohostIP);
+      autohosts[autohost].send(JSON.stringify({
+        action: 'midJoin',
+        parameters: parameters,
+      }));
+    } catch (e) {
+      console.log('no active autohost!');
+      console.log(e);
+    }
   }
 }
 
