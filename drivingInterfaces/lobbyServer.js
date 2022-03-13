@@ -169,6 +169,7 @@ class LobbyServer {
         playerListObj = this.usernames2ClientObj(playerList);
         this.rooms[roomTitle].clearPoll();;
         this.rooms[roomTitle].configureToStop();
+        autohostServer.returnRoom(this.rooms[roomTitle]);
         for (const ppl of playerListObj) {
           this.stateDump(ppl, 'EXITGAME');
         }

@@ -1,7 +1,7 @@
 /* eslint-disable require-jsdoc */
 
 // eslint-disable-next-line max-len
-const {initAutohostServerNetwork} = require('../lib/autohostServerNetwork');
+const { initAutohostServerNetwork } = require('../lib/autohostServerNetwork');
 
 /**
  * @class AutohostManger
@@ -14,12 +14,12 @@ class AutohostManager {
    * @param {String} selfIP
    */
   constructor(allowedClients, selfIP) {
-    const server=this;
+    const server = this;
     initAutohostServerNetwork(allowedClients, selfIP);
 
 
-    eventEmitter.on('connectionFromAutohost', function(clients) {
-      server.clients=clients; // a lit of autohost
+    eventEmitter.on('connectionFromAutohost', function (clients) {
+      server.clients = clients; // a lit of autohost
       // console.log(clients);
     });
   }
@@ -30,17 +30,17 @@ class AutohostManager {
    */
   start(roomObj) {
     // console.log(Array.from(this.clients)[0]);
-    const autohostIP=roomObj.mgr;
+    const autohostIP = roomObj.mgr;
     // console.log(autohostNum);
     console.log('autohost starting game!');
-    const autohosts=Array.from(this.clients);
+    const autohosts = Array.from(this.clients);
     // eslint-disable-next-line max-len
     try {
       const autohost = this.autohostIPtoID(autohostIP);
       console.log(autohost);
       console.log(autohostIP);
       autohosts[autohost].send(JSON.stringify(
-          {'action': 'startGame', 'parameters': roomObj}));
+        { 'action': 'startGame', 'parameters': roomObj }));
     } catch (err) {
       console.log('no active autohost!');
       console.log(err);
@@ -48,15 +48,31 @@ class AutohostManager {
   }
 
   killEngine(roomObj) {
-    const autohostIP=roomObj.mgr;
+    const autohostIP = roomObj.responsibleAutohost;
     // console.log(autohostNum);
     console.log('autohost killing engine!');
-    const autohosts=Array.from(this.clients);
+    const autohosts = Array.from(this.clients);
     // eslint-disable-next-line max-len
     try {
       const autohost = this.autohostIPtoID(autohostIP);
       autohosts[autohost].send(JSON.stringify(
-          {'action': 'killEngine', 'parameters': roomObj}));
+        { 'action': 'killEngine', 'parameters': roomObj }));
+    } catch (err) {
+      console.log('no active autohost!');
+      console.log(err);
+    }
+  }
+
+  returnRoom(roomObj) {
+    const autohostIP = roomObj.responsibleAutohost;
+    // console.log(autohostNum);
+    console.log('autohost returning room!');
+    const autohosts = Array.from(this.clients);
+    // eslint-disable-next-line max-len
+    try {
+      const autohost = this.autohostIPtoID(autohostIP);
+      autohosts[autohost].send(JSON.stringify(
+        { 'action': 'returnRoom', 'parameters': roomObj }));
     } catch (err) {
       console.log('no active autohost!');
       console.log(err);
@@ -65,7 +81,7 @@ class AutohostManager {
 
 
   autohostIPtoID(autohostIP) {
-    const autohosts=Array.from(this.clients);
+    const autohosts = Array.from(this.clients);
     // console.log(autohosts);
     for (const autohost in autohosts) {
       // console.log(autohosts[autohost]);
@@ -76,7 +92,7 @@ class AutohostManager {
   }
 
   autohostIDtoIP(autohostID) {
-    const autohosts=Array.from(this.clients);
+    const autohosts = Array.from(this.clients);
     return autohosts[autohostID].ip;
   }
 
