@@ -511,6 +511,9 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'no such battle');
           return;
         }
+        if (this.rooms[battleToStart].isStarted) {
+          return;
+        }
         // add this cmd to the poll if it's not in the poll
         this.rooms[battleToStart].addPoll(client.state.username, action);
 
