@@ -23,10 +23,10 @@ async function createSchema() {
 
     await knex.schema.createTable('friends', (table) => {
       table.increments();
-      table.integer('userId').references('users.id').notNullable()
-          .onDelete('CASCADE');
-      table.integer('friendId').references('users.id').notNullable()
-          .onDelete('CASCADE');
+      table.integer('userId').unsigned().references('users.id')
+          .notNullable() .onDelete('CASCADE');
+      table.integer('friendId').unsigned().references('users.id')
+          .notNullable().onDelete('CASCADE');
     });
 
     console.log('Created friends table');
@@ -35,7 +35,7 @@ async function createSchema() {
   if (! await knex.schema.hasTable('ipHistory')) {
     await knex.schema.createTable('ipHistory', (table) => {
       table.increments();
-      table.integer('userId').references('users.id')
+      table.integer('userId').unsigned().references('users.id')
           .notNullable().onDelete('CASCADE');
       table.string('ip', 255).notNullable();
     });
@@ -45,7 +45,8 @@ async function createSchema() {
   if (! await knex.schema.hasTable('illegalActions')) {
     await knex.schema.createTable('illegalActions', (table) => {
       table.increments();
-      table.integer('userId').references('users.id').onDelete('CASCADE');
+      table.integer('userId').unsigned()
+          .references('users.id').onDelete('CASCADE');
       table.string('type', 255).notNullable();
       table.string('content', 255);
     });
@@ -55,8 +56,8 @@ async function createSchema() {
   if (! await knex.schema.hasTable('conformations')) {
     await knex.schema.createTable('confirmations', (table) => {
       table.increments();
-      table.integer('userId').references('users.id')
-          .notNullable().onDelete('CASCADE');
+      table.integer('userId').unsigned()
+          .references('users.id').notNullable().onDelete('CASCADE');
       table.string('type', 255).notNullable();
       table.string('text', 255).notNullable();
       table.string('parameters', 255);
@@ -92,9 +93,9 @@ async function createSchema() {
   if (! await knex.schema.hasTable('chatHistory')) {
     await knex.schema.createTable('chatHistory', (table) => {
       table.increments();
-      table.integer('userId').references('users.id')
+      table.integer('userId').unsigned().references('users.id')
           .notNullable().onDelete('CASCADE');
-      table.integer('chatId').references('chats.id')
+      table.integer('chatId').unsigned().references('chats.id')
           .notNullable().onDelete('CASCADE');
       table.string('content', 255).notNullable();
       // ISO String format

@@ -1,15 +1,22 @@
 /** TEST RELATED CONFIG */
 const knexConf = {
-  client: 'sqlite3',
-  useNullAsDefault: true,
+  // client: 'sqlite3',
+  // useNullAsDefault: true,
+  // connection: {
+  //   filename: './test.db',
+  // },
+  // pool: {
+  //   afterCreate: (conn, cb) =>
+  //     conn.run('PRAGMA foreign_keys = ON', cb),
+  // },
+  client: 'mysql',
   connection: {
-    filename: './test.db',
+    host: '127.0.0.1',
+    port: 3306,
+    user: 'username',
+    password: 'password',
+    database: 'database_name',
   },
-  pool: {
-    afterCreate: (conn, cb) =>
-      conn.run('PRAGMA foreign_keys = ON', cb),
-  },
-
 };
 
 const dntpServiceHost = 'http://localhost:3000';
@@ -19,7 +26,7 @@ const config={
   autohosts: ['127.0.0.1'],
   // eslint-disable-next-line max-len
   hostileIP: ['444.444.444.444'], // IPs known to cause trouble. do not acess db for this
-  selfIP:'178.18.243.134', // IP of plasmid
+  selfIP: '178.18.243.134', // IP of plasmid
   port: 9090,
   db: 'sqlite',
 };
