@@ -135,7 +135,12 @@ class LobbyServer {
 
 
     eventEmitter.on('clearFromLobbyMemory', function (client) {
-      console.log('logging out this client', client.state.username);
+      try{
+        console.log('logging out this client', client.state.username);
+      }
+      catch {
+        console.log('logging out unlogged in client');
+      }
       server.logOutClient(client);
     });
 
