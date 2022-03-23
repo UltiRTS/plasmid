@@ -1,7 +1,8 @@
 /** TEST RELATED CONFIG */
-const knexConf = {
+const dbConfig = {
   'useDB': 'sqlite3',
   'sqlite3': {
+    client: 'sqlite3',
     useNullAsDefault: true,
     connection: {
       filename: './test.db',
@@ -10,8 +11,9 @@ const knexConf = {
       afterCreate: (conn, cb) =>
         conn.run('PRAGMA foreign_keys = ON', cb),
     },
-  }
+  },
   'mysql': {
+    client: 'mysql',
     connection: {
       host: '127.0.0.1',
       port: 3306,
@@ -19,7 +21,7 @@ const knexConf = {
       password: 'password',
       database: 'database_name',
     },
-  }
+  },
 };
 
 const dntpServiceHost = 'http://localhost:3000';
@@ -37,7 +39,7 @@ const debug = true;
 
 module.exports = {
   config,
-  knexConf,
+  dbConfig,
   debug,
   dntpServiceHost,
 };

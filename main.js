@@ -7,7 +7,9 @@ const Config=require('./config.js').config;
 // console.log(Config)
 // global.config=Config.config
 
-const {knexConf} = require('./config');
+const {dbConfig} = require('./config');
+knexConf = dbConfig[dbConfig.useDB];
+
 const {DataManager} = require('./lib/dataManager');
 const dataManager = new DataManager(knexConf);
 
