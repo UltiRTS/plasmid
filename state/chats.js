@@ -10,12 +10,10 @@ class chatsPrototype{
   }
 
   channelGetLastMessage(chatname){
-    return this.chats[chatname].message;
+    return {'lastMessage': this.chats[chatname].lastMessage, 'channel': chatname, 'author': this.chats[chatname].chatAuthor};
   }
 
-  channelWriteLastMessage(chatname, message){
-    this.chats[chatname].message = message;
-  }
+
 
   createNewChat(chatname,id, chatType, chatDescription, chatPassword){
     this.chats[chatname] = this.chatFactory(id, chatType, chatDescription, chatPassword);
