@@ -205,8 +205,9 @@ class LobbyServer {
           const chats=this.chats;
           const server = this;
           this.dataManager.createChat(chatToJoin, 'chat', '', '').then((chat) => {
-
-            chats.createNewChat(chatToJoin, chat.type, chat.describe, chat.password);
+            console.log(chat)
+            console.log('new chat created')
+            chats.createNewChat(chatToJoin,chat.id, chat.type, chat.describe, chat.password);
             if (!(chats.chats[chatToJoin].allMembers.includes(client.state.username))) {
               // console.log('actually joining chat');
               chats.chatMemberJoinChat(chatToJoin, client.state.username);
@@ -222,7 +223,7 @@ class LobbyServer {
           this.chats.chatMemberJoinChat(chatToJoin, client.state.username);
 
           client.state.joinChat(chatToJoin);
-          const usersinchat = this.usernames2ClientObj(this.chats.chats[chatToJoin].clients);
+          const usersinchat = this.usernames2ClientObj(this.chats.chats[chatToJoin].allMembers);
           for (const ppl of usersinchat) {
             // now let everyone else know
             this.stateDump(ppl, 'JOINCHAT', reqId);
@@ -244,9 +245,10 @@ class LobbyServer {
         if (chatMsg == '') return;
         if (chatName in this.chats.chats && this.chats.chats[chatName].allMembers.includes(client.state.username)) {
 
-          console.log('client id: ', client.state.userID);
+          // console.log('client id: ', client.state.userID);
           const server = this;
-          this.dataManager.insertMessage(this.chats.chats[chatName].chat.id, client.state.userID, chatMsg).then(() => {
+          console.log(this.chats.chats[chatName].id);
+          this.dataManager.insertMessage(this.chats.chats[chatName].id, client.state.userID, chatMsg).then(() => {
             const pplObjs = this.usernames2ClientObj(server.chats.chats[chatName].allMembers);
             for (const ppl of pplObjs) {
               // now let everyone else know
@@ -812,9 +814,9 @@ class LobbyServer {
 
   getChatIndex() {
     const chatDictToReturn = {};
-    for (const chatName in this.chats) {
+    for (const chatName in this.chats.chats) {
       chatDictToReturn[chatName] = {
-        chatType: this.chats.chats[chatName].type,
+        chatType: this.chats.chats[chatName].chatType,
         chatDescription: this.chats.chats[chatName].chatDescription,
         clients: this.chats.chats[chatName].allMembers,
       };

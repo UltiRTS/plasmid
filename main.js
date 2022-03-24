@@ -1,7 +1,6 @@
 /* eslint-disable max-len */
 const {LobbyServer} = require('./drivingInterfaces/lobbyServer');
 const {AutohostManager} = require('./drivingInterfaces/autohostManager.js');
-const {chats} = require('./state/chats.js');
 
 // eslint-disable-next-line no-unused-vars
 const Config=require('./config.js').config;
@@ -17,6 +16,7 @@ const dataManager = new DataManager(knexConf);
 const EventEmitter = require('events');
 global.eventEmitter = new EventEmitter();
 
+const {chatsPrototype} = require('./state/chats.js');
 const chatsObj = new chatsPrototype();
 
 /* START BUSINESS LOGIC*/
