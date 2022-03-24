@@ -13,17 +13,13 @@ const {clearInterval} = require('timers');
 // const eventEmitter = new EventEmitter()
 
 class LobbyServer {
-  chats = {};
   rooms = {};
   players = {}; // holds all connected clients;
 
-  constructor(port, dataManager, autohostManager) {
+  constructor(port, dataManager, autohostManager, chatsObj) {
     this.dataManager = dataManager;
     this.autohostManger = autohostManager;
-    // uncomment below for deving purposes
-    // const { knexConf } = require('../config');
-    // const { DataManager } = require('../lib/dataManager');
-    // this.dataManager = new DataManager(knexConf);
+    this.chats = chatsObj;
 
     console.log('lobby server started!');
     initLobbyServerNetwork(port);
@@ -205,30 +201,28 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid chat name');
         }
 
-        if (!(chatToJoin in this.chats)) {
+        if (!(chatToJoin in this.chats.chats)) {
+          const chats=this.chats;
           const server = this;
           this.dataManager.createChat(chatToJoin, 'chat', '', '').then((chat) => {
-            server.chats[chatToJoin] = {
-              chat,
-              clients: [],
-            };
-            console.log(server.chats[chatToJoin].clients);
-            if (!(server.chats[chatToJoin].clients.includes(client.state.username))) {
-              console.log('actually joining chat');
-              server.chats[chatToJoin].clients.push(client.state.username);
+
+            chats.createNewChat(chatToJoin, chat.type, chat.describe, chat.password);
+            if (!(chats.chats[chatToJoin].allMembers.includes(client.state.username))) {
+              // console.log('actually joining chat');
+              chats.chatMemberJoinChat(chatToJoin, client.state.username);
             }
             client.state.joinChat(chatToJoin);
-            const usersinchat = server.usernames2ClientObj(server.chats[chatToJoin].clients);
+            const usersinchat = server.usernames2ClientObj(chats.chats[chatToJoin].allMembers);
             for (const ppl of usersinchat) {
               // now let everyone else know
               server.stateDump(ppl, 'JOINCHAT', reqId);
             }
           });
         } else {
-          this.chats[chatToJoin].clients.push(client.state.username);
+          this.chats.chatMemberJoinChat(chatToJoin, client.state.username);
 
           client.state.joinChat(chatToJoin);
-          const usersinchat = this.usernames2ClientObj(this.chats[chatToJoin].clients);
+          const usersinchat = this.usernames2ClientObj(this.chats.chats[chatToJoin].clients);
           for (const ppl of usersinchat) {
             // now let everyone else know
             this.stateDump(ppl, 'JOINCHAT', reqId);
@@ -248,27 +242,23 @@ class LobbyServer {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
         if (chatMsg == '') return;
-        // console.log(channelName);
-        // console.log(this.chats);
-        // console.log(this.chats[channelName].clients);
-        if (chatName in this.chats && this.chats[chatName].clients.includes(client.state.username)) {
-          // console.log('inserted message'+chatMsg);
-          // console.log('chat id: '+this.chats[chatName].chat.id);
-          // console.log('user id: '+client.state.id);
+        if (chatName in this.chats.chats && this.chats.chats[chatName].allMembers.includes(client.state.username)) {
 
           console.log('client id: ', client.state.userID);
           const server = this;
-          this.dataManager.insertMessage(this.chats[chatName].chat.id, client.state.userID, chatMsg).then(() => {
-            const pplObjs = this.usernames2ClientObj(server.chats[chatName].clients);
+          this.dataManager.insertMessage(this.chats.chats[chatName].chat.id, client.state.userID, chatMsg).then(() => {
+            const pplObjs = this.usernames2ClientObj(server.chats.chats[chatName].allMembers);
             for (const ppl of pplObjs) {
               // now let everyone else know
-              // console.log('sending chat to ' + ppl.state.username);
+              // the line below is used for plasmid statedump
               ppl.state.writeChatMsg({
                 'author': client.state.username,
                 'msg': chatMsg,
                 'chatName': chatName,
               });
               server.stateDump(ppl, 'SAYCHAT', reqId);
+
+              this.chats.channelWriteLastMessage(chatName, chatMsg);
             }
           });
         } else {
@@ -288,11 +278,10 @@ class LobbyServer {
         }
 
         try {
-          this.chats[chatToLeave].clients
-              .splice(this.chats[chatToLeave].clients.indexOf(client), 1);
+          this.chats.chatMemberLeaveChat(chatToLeave, client.state.username);
           client.state.leaveChat(chatToLeave);
           this.stateDump(client, 'LEAVECHAT', reqId);
-          const pplObjs = this.usernames2ClientObj(this.chats[chatToLeave].clients);
+          const pplObjs = this.usernames2ClientObj(this.chats.chats[chatToLeave].allMembers);
           for (const ppl of pplObjs) {
             this.stateDump(ppl, 'LEAVECHAT', reqId);
           }
@@ -773,8 +762,7 @@ class LobbyServer {
       return;
     }
     clearInterval(client.keepAlive);
-    // console.log('clientstate:');
-    // console.log(client.state.chats);
+
     const deepFreezedChat = JSON.parse(JSON.stringify(client.state.chats));
     for (const chat in deepFreezedChat) {
       this.processLoggedClient(client, {'action': 'LEAVECHAT', 'parameters': {'chatName': deepFreezedChat[chat]}});
@@ -826,9 +814,9 @@ class LobbyServer {
     const chatDictToReturn = {};
     for (const chatName in this.chats) {
       chatDictToReturn[chatName] = {
-        chatType: this.chats[chatName].chatType,
-        chatDescription: this.chats[chatName].chatDescription,
-        clients: this.chats[chatName].clients,
+        chatType: this.chats.chats[chatName].type,
+        chatDescription: this.chats.chats[chatName].chatDescription,
+        clients: this.chats.chats[chatName].allMembers,
       };
     }
     return chatDictToReturn;
