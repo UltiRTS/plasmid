@@ -37,9 +37,18 @@ const config = {
 
 const debug = true;
 
+const discordToken = 'a token';
+const ircServer = {
+  addr: '185.205.246.232',
+  port: 6667
+}
+
 module.exports = {
   config,
   dbConfig,
   debug,
   dntpServiceHost,
+  discordToken,
+  ircServer
+  
 };
