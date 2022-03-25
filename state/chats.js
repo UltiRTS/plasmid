@@ -8,11 +8,11 @@ class chatsPrototype{
     return {'chatAuthor':'','lastMessage':'','allMembers':[], 'id':id, 'type': chatType, 'description': chatDescription, 'password': chatPassword};
 
   }
-
+/*
   channelGetLastMessage(chatname){
     return {'lastMessage': this.chats[chatname].lastMessage, 'channel': chatname, 'author': this.chats[chatname].chatAuthor};
   }
-
+*/
 
 
   createNewChat(chatname,id, chatType, chatDescription, chatPassword){
@@ -26,11 +26,11 @@ class chatsPrototype{
   chatMemberLeaveChat(chatname, member){
     this.chats[chatname].allMembers.splice(this.chats[chatname].allMembers.indexOf(member), 1);
   }
-
+/*
   chatMemberSendMessage(chatname, member, message){
     this.chats[chatname].lastMessage = message;
     this.chats[chatname].chatAuthor = member;
-  }
+  }*/
 }
 
 

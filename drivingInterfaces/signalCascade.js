@@ -1,63 +1,59 @@
-const irc = require('irc');
-const Discord = require('discord.js');
+const {discordIRCNetwork} = require('../lib/discordIRCnetwork');
 
 class CascadeRelay{
-  constructor(config = {
-    dcToken: "",
-    ircServer: "",
-    ircPort: 6667,
-    ircChannels: ['#general'],
-    dcChannel: 'bridge',
-  }) {
-    // from lobby
-    this.dcReady = false;
-    this.ircReady = false;
+  constructor(eventEmitter, lobbyServer, selfUsername, discordToken){
+    const discordIRCNetworkObj = new discordIRCNetwork(
+      {
+        dcToken: discordToken,
+        ircServer: "",
+        ircPort: 6667,
+        ircChannels: ['#general'],
+        dcChannel: 'bridge',
+        username: selfUsername,
+        eventEmitter: eventEmitter,
+      }
+    );
+    const fakeLobbyClient = {'state':{'loggedIn': true,'username':'Anonymous'}};
+    const fakeLobbyMessage = {'action':'SAYCHAT', 'parameters':{'msg':'Trash talk','chatName':'global', 'noBridge':true}};
 
-    this.dcClient = new Discord.Client({
-      intents: ['GUILDS', 'GUILD_MESSAGES']
-    });
+    eventEmitter.on('bridgeMessage',  function(message) {
+      // console.log(message);
+      if (message.sender == selfUsername) return;
+      if(message.action == 'discordMsg'){
+        // console.log('discord msg');
+        discordIRCNetworkObj.send2irc(message.parameters.msg, message.parameters.sender);
 
-    this.dcClient.on('ready', () => {
-      this.dcReady = true;
-      console.log('discord bot ready!');
-    });
+        fakeLobbyClient.state.username = message.parameters.sender;
+        fakeLobbyMessage.parameters.msg = message.parameters.msg;
+        lobbyServer.processLoggedClient(fakeLobbyClient, fakeLobbyMessage);
+      }
+      else if(message.action == 'ircMsg'){
+        // console.log('irc msg');
+        discordIRCNetworkObj.send2discord(message.parameters.msg, message.parameters.sender);
 
-    this.dcClient.on('messageCreate', message => {
-      if(message.channel != config.dcChannel) return;
-      this.ircClient.say('#general', message.author + ' => ' + message.content);
-    });
+        fakeLobbyClient.state.username = message.parameters.sender;
+        fakeLobbyMessage.parameters.msg = message.parameters.msg;
+        lobbyServer.processLoggedClient(fakeLobbyClient, fakeLobbyMessage);
 
-    this.dcClient.addListener('irc_msg', (sender, msg) => {
-      if(this.dcReady == false) return;
-      try {
-        const guild = this.dcClient.guilds.cache.get('742383404418334782');
-        const channels = guild.channels.cache.filter(c => c.name == config.dcChannel);
-        for(const channel of channels) {
-            channel[1].send(sender + ' => ' + msg);
-        }
-      } catch(e) {
-        console.log('relay error');
-        console.log(e);
+      }
+
+      else if (message.action == 'plasmidLobbyMsg'){
+        // console.log('plasmidLobbyMsg');
+        discordIRCNetworkObj.send2irc(message.parameters.msg, message.parameters.sender);
+        discordIRCNetworkObj.send2discord(message.parameters.msg, message.parameters.sender);
+      }
+
+      else if(message.action == 'discordReady'){
+        // console.log('discord ready');
+        discordIRCNetworkObj.send2irc('discord ready', 'discord');
+      }
+      else if(message.action == 'IRCReady'){
+        // console.log('irc ready');
+        discordIRCNetworkObj.send2discord('irc ready', 'irc');
       }
     });
-
-    this.ircClient = new irc.Client(config.ircServer, 'bot', {
-      channels: config.ircChannels
-    });
-
-    this.ircClient.on('registered', () => {
-      this.ircReady = true;
-      console.log("irc bot ready");
-    });
-
-    this.ircClient.addListener('message#general', (from, text, _) => {
-      if(this.dcReady != true) return;
-      this.dcClient.emit('irc_msg', from, text);
-    });
-
-    console.log(config.dcToken);
-    this.dcClient.login(config.dcToken);
   }
+
 }
 
 module.exports = {

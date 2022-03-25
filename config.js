@@ -36,8 +36,8 @@ const config = {
 };
 
 const debug = true;
-
-const discordToken = 'a token';
+const bridgeUsername = 'Thea, Inc. signalCascade';
+const discordToken = '';
 const ircServer = {
   addr: '185.205.246.232',
   port: 6667
@@ -49,6 +49,6 @@ module.exports = {
   debug,
   dntpServiceHost,
   discordToken,
-  ircServer
-  
+  ircServer,
+  bridgeUsername,
 };

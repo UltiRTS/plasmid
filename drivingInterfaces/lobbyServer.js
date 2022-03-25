@@ -236,9 +236,11 @@ class LobbyServer {
         if (!client.state.loggedIn) return;
         let chatName;
         let chatMsg;
+        let noBridge;
         try {
           chatName = message['parameters']['chatName'] || 'global';
           chatMsg = message['parameters']['msg'];
+          noBridge = message['parameters']['noBridge'];
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
@@ -260,7 +262,10 @@ class LobbyServer {
               });
               server.stateDump(ppl, 'SAYCHAT', reqId);
 
-              this.chats.channelWriteLastMessage(chatName, chatMsg);
+              /*his.chats.channelWriteLastMessage(chatName, chatMsg);*/
+              if(!noBridge) {
+              eventEmitter.emit('bridgeMessage', {'action': 'plasmidLobbyMsg', 'parameters': {'sender': client.state.username, 'msg': chatMsg}});
+              }
             }
           });
         } else {

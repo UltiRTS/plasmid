@@ -1,6 +1,4 @@
 /* eslint-disable max-len */
-const {LobbyServer} = require('./drivingInterfaces/lobbyServer');
-const {AutohostManager} = require('./drivingInterfaces/autohostManager.js');
 
 // eslint-disable-next-line no-unused-vars
 const Config=require('./config.js').config;
@@ -23,6 +21,14 @@ const chatsObj = new chatsPrototype();
 
 
 // eslint-disable-next-line no-unused-vars
+const {AutohostManager} = require('./drivingInterfaces/autohostManager.js');
 autohostServer=new AutohostManager(Config.autohosts, Config.selfIP);
 // eslint-disable-next-line no-unused-vars
+
+const {LobbyServer} = require('./drivingInterfaces/lobbyServer');
 lobbyServer=new LobbyServer(Config.port, dataManager, autohostServer, chatsObj);
+
+const {CascadeRelay} = require('./drivingInterfaces/signalCascade');
+const {bridgeUsername, discordToken} = require('./config');
+
+const cascade = new CascadeRelay(eventEmitter, lobbyServer, bridgeUsername, discordToken);
