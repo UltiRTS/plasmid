@@ -1,4 +1,4 @@
-const {Reflex} = require('../drivingInterfaces/reflex');
+const {DevPortalDriver} = require('../drivingInterfaces/devPortalDriver');
 const {dbConfig} = require('../config');
 const knexConfig = dbConfig[dbConfig.useDB];
 const {DataManager} = require('../lib/dataManager');
@@ -10,4 +10,4 @@ const sharedConfig = {
   somekey: 'somevalue'
 }
 
-const reflex = new Reflex(bus, dbm, sharedConfig);
+const DevPortalDriver = new DevPortalDriver(bus, dbm, sharedConfig);

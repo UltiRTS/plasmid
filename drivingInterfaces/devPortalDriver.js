@@ -3,7 +3,7 @@ const {dbConfig} = require('../config');
 const { DataManager } = require('../lib/dataManager');
 const knexConf = dbConfig[dbConfig.useDB];
 
-class Reflex {
+class DevPortalDriver {
   constructor(eventEmitter, config2manipulate, dataManager, config={
     port: 10083,
     invite_token: 'token'
@@ -147,5 +147,5 @@ class Reflex {
 }
 
 module.exports = {
-  Reflex
+  DevPortalDriver
 }

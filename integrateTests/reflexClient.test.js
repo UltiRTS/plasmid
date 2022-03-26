@@ -6,8 +6,8 @@ const ws = new WebSocket('ws://localhost:10083');
 const registerMsg = {
   action: 'register',
   parameters: {
-    username: 'reflex',
-    password: 'reflex',
+    username: 'devPortalDriver',
+    password: 'devPortalDriver',
     priv_level: 1,
     invite_token: 'token',
   }
@@ -16,8 +16,8 @@ const registerMsg = {
 const loginMsg = {
   action: 'login',
   parameters: {
-    username: 'reflex',
-    password: 'reflex',
+    username: 'devPortalDriver',
+    password: 'devPortalDriver',
   }
 }
 
