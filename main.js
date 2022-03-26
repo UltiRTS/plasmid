@@ -5,6 +5,10 @@ const Config=require('./config.js').config;
 // console.log(Config)
 // global.config=Config.config
 
+const sharedConfig =  {
+
+};
+
 const {dbConfig} = require('./config');
 knexConf = dbConfig[dbConfig.useDB];
 
