@@ -5,7 +5,7 @@ class CascadeRelay{
     const discordIRCNetworkObj = new discordIRCNetwork(
       {
         dcToken: discordToken,
-        ircServer: "",
+        ircServer: "185.205.246.232",
         ircPort: 6667,
         ircChannels: ['#general'],
         dcChannel: 'bridge',
@@ -13,27 +13,37 @@ class CascadeRelay{
         eventEmitter: eventEmitter,
       }
     );
-    const fakeLobbyClient = {'state':{'loggedIn': true,'username':'Anonymous'}};
-    const fakeLobbyMessage = {'action':'SAYCHAT', 'parameters':{'msg':'Trash talk','chatName':'global', 'noBridge':true}};
+
 
     eventEmitter.on('bridgeMessage',  function(message) {
-      // console.log(message);
-      if (message.sender == selfUsername) return;
-      if(message.action == 'discordMsg'){
+      if(message.action == 'discordReady'){
+        // console.log('discord ready');
+        discordIRCNetworkObj.send2irc('discord ready', 'discord');
+        return;
+      }
+      else if(message.action == 'IRCReady'){
+        // console.log('irc ready');
+        discordIRCNetworkObj.send2discord('irc ready', 'irc');
+        return;
+      }
+
+      // else if (message.parameters.sender == selfUsername) return;
+      else if(message.action == 'discordMsg'){
+        // console.log('discord message received');
+        // console.log(message.parameters.sender);
+        // console.log('discord content received');
+        // console.log(message.parameters.msg);
         // console.log('discord msg');
         discordIRCNetworkObj.send2irc(message.parameters.msg, message.parameters.sender);
 
-        fakeLobbyClient.state.username = message.parameters.sender;
-        fakeLobbyMessage.parameters.msg = message.parameters.msg;
-        lobbyServer.processLoggedClient(fakeLobbyClient, fakeLobbyMessage);
+        lobbyServer.sayChatBridge(message.parameters.sender, message.parameters.msg);
+        
       }
       else if(message.action == 'ircMsg'){
         // console.log('irc msg');
         discordIRCNetworkObj.send2discord(message.parameters.msg, message.parameters.sender);
 
-        fakeLobbyClient.state.username = message.parameters.sender;
-        fakeLobbyMessage.parameters.msg = message.parameters.msg;
-        lobbyServer.processLoggedClient(fakeLobbyClient, fakeLobbyMessage);
+        lobbyServer.sayChatBridge(message.parameters.sender, message.parameters.msg);
 
       }
 
@@ -43,14 +53,7 @@ class CascadeRelay{
         discordIRCNetworkObj.send2discord(message.parameters.msg, message.parameters.sender);
       }
 
-      else if(message.action == 'discordReady'){
-        // console.log('discord ready');
-        discordIRCNetworkObj.send2irc('discord ready', 'discord');
-      }
-      else if(message.action == 'IRCReady'){
-        // console.log('irc ready');
-        discordIRCNetworkObj.send2discord('irc ready', 'irc');
-      }
+
     });
   }
 

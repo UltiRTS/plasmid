@@ -2,13 +2,13 @@
 /* eslint-disable guard-for-in */
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-const {initLobbyServerNetwork} = require('../lib/lobbyServerNetwork');
+const { initLobbyServerNetwork } = require('../lib/lobbyServerNetwork');
 // const ClientState = require('./clientState').default;
-const {ClientState} = require('../state/client');
-const {RoomState} = require('../state/room');
+const { ClientState } = require('../state/client');
+const { RoomState } = require('../state/room');
 
 
-const {clearInterval} = require('timers');
+const { clearInterval } = require('timers');
 // const {AutohostManager} = require('./autohostManager');
 // const eventEmitter = new EventEmitter()
 
@@ -24,7 +24,7 @@ class LobbyServer {
     console.log('lobby server started!');
     initLobbyServerNetwork(port);
     const server = this;
-    eventEmitter.on('commandFromClient', async function(client, message) {
+    eventEmitter.on('commandFromClient', async function (client, message) {
       // unlloged in, we log it in and check if the client agreed to the contract
       // when registering; if not, we reprompt the contract
       if (!sanityCheckClient()) return;
@@ -74,7 +74,7 @@ class LobbyServer {
                 server.stateDump(client, 'LOGIN');
                 console.log('logging in');
               }
-            }).catch((err) => {throw (err);});
+            }).catch((err) => { throw (err); });
           }).catch((e) => {
             throw e;
           });
@@ -130,7 +130,7 @@ class LobbyServer {
     });
 
 
-    eventEmitter.on('clearFromLobbyMemory', function(client) {
+    eventEmitter.on('clearFromLobbyMemory', function (client) {
       try {
         console.log('logging out this client', client.state.username);
       }
@@ -140,7 +140,7 @@ class LobbyServer {
       server.logOutClient(client);
     });
 
-    eventEmitter.on('commandFromAutohost', function(client, message) {
+    eventEmitter.on('commandFromAutohost', function (client, message) {
       // do something with autohost incoming interface msg
       // const roomID = message.parameters.roomID;
       // message=JSON.parse(message);
@@ -168,7 +168,7 @@ class LobbyServer {
       case 'serverEnding':
         playerList = this.rooms[roomTitle].getPlayers();
         playerListObj = this.usernames2ClientObj(playerList);
-        this.rooms[roomTitle].clearPoll(); ;
+        this.rooms[roomTitle].clearPoll();;
         this.rooms[roomTitle].configureToStop();
         autohostServer.returnRoom(this.rooms[roomTitle]);
         for (const ppl of playerListObj) {
@@ -193,7 +193,7 @@ class LobbyServer {
       }
       case 'JOINCHAT': {
         if (!client.state.loggedIn) return;
-        console.log('received joinchat req');
+        // console.log('received joinchat req');
         let chatToJoin;
         try {
           chatToJoin = message['parameters']['chatName'];
@@ -202,12 +202,12 @@ class LobbyServer {
         }
 
         if (!(chatToJoin in this.chats.chats)) {
-          const chats=this.chats;
+          const chats = this.chats;
           const server = this;
           this.dataManager.createChat(chatToJoin, 'chat', '', '').then((chat) => {
-            console.log(chat)
-            console.log('new chat created')
-            chats.createNewChat(chatToJoin,chat.id, chat.type, chat.describe, chat.password);
+            // console.log(chat)
+            // console.log('new chat created')
+            chats.createNewChat(chatToJoin, chat.id, chat.type, chat.describe, chat.password);
             if (!(chats.chats[chatToJoin].allMembers.includes(client.state.username))) {
               // console.log('actually joining chat');
               chats.chatMemberJoinChat(chatToJoin, client.state.username);
@@ -240,7 +240,6 @@ class LobbyServer {
         try {
           chatName = message['parameters']['chatName'] || 'global';
           chatMsg = message['parameters']['msg'];
-          noBridge = message['parameters']['noBridge'];
         } catch (e) {
           this.clientSendNotice(client, 'error', 'invalid chat message');
         }
@@ -251,7 +250,7 @@ class LobbyServer {
           const server = this;
           console.log(this.chats.chats[chatName].id);
           this.dataManager.insertMessage(this.chats.chats[chatName].id, client.state.userID, chatMsg).then(() => {
-            const pplObjs = this.usernames2ClientObj(server.chats.chats[chatName].allMembers);
+            const pplObjs = server.usernames2ClientObj(server.chats.chats[chatName].allMembers);
             for (const ppl of pplObjs) {
               // now let everyone else know
               // the line below is used for plasmid statedump
@@ -263,9 +262,7 @@ class LobbyServer {
               server.stateDump(ppl, 'SAYCHAT', reqId);
 
               /*his.chats.channelWriteLastMessage(chatName, chatMsg);*/
-              if(!noBridge) {
-              eventEmitter.emit('bridgeMessage', {'action': 'plasmidLobbyMsg', 'parameters': {'sender': client.state.username, 'msg': chatMsg}});
-              }
+              eventEmitter.emit('bridgeMessage', { 'action': 'plasmidLobbyMsg', 'parameters': { 'sender': client.state.username, 'msg': chatMsg } });
             }
           });
         } else {
@@ -532,8 +529,8 @@ class LobbyServer {
         } else {
           // this.stateDump(reqId, client, 'STARTGAME');
           this.clientSendNotice(client,
-              'error',
-              'not enough players to start game');
+            'error',
+            'not enough players to start game');
         }
         // dont statedump at this moment
         // statedump for start is called upon autohost return in processautohost!
@@ -570,7 +567,7 @@ class LobbyServer {
           client.state.username ==
           this.rooms[battleToSetTeam].getHoster()) {
           try {
-            this.rooms[battleToSetTeam].clearPoll(action); ;
+            this.rooms[battleToSetTeam].clearPoll(action);;
             if (teamToSet === '-1') {
               if (isCircuit) this.rooms[battleToSetTeam].removeAI(playerToSetTeam);
               else if (isChicken) this.rooms[battleToSetTeam].removeChicken(playerToSetTeam);
@@ -585,8 +582,8 @@ class LobbyServer {
           } // hackery going on
         } else {
           this.clientSendNotice(client,
-              'error',
-              'not enough players to set team');
+            'error',
+            'not enough players to set team');
         }
 
 
@@ -713,8 +710,8 @@ class LobbyServer {
           } // hackery going on
         } else {
           this.clientSendNotice(client,
-              'error',
-              'not enough players to stop game');
+            'error',
+            'not enough players to stop game');
         }
         // notify players in processautohost!
       }
@@ -727,7 +724,7 @@ class LobbyServer {
 
   processPing(client) {
     function checkPing() {
-      client.send(JSON.stringify({'action': 'PING'}));
+      client.send(JSON.stringify({ 'action': 'PING' }));
       if (!client.respondedKeepAlive) {
         client.connectivity--;
       } // deduct client hp if it hasnt responded the previous ping
@@ -744,7 +741,7 @@ class LobbyServer {
 
   clientSendNotice(client, type, msg) {
     client.send(JSON.stringify({
-      'action': 'NOTICE', 'parameters': {'type': type, 'msg': msg},
+      'action': 'NOTICE', 'parameters': { 'type': type, 'msg': msg },
     }));
   }
 
@@ -772,12 +769,12 @@ class LobbyServer {
 
     const deepFreezedChat = JSON.parse(JSON.stringify(client.state.chats));
     for (const chat in deepFreezedChat) {
-      this.processLoggedClient(client, {'action': 'LEAVECHAT', 'parameters': {'chatName': deepFreezedChat[chat]}});
+      this.processLoggedClient(client, { 'action': 'LEAVECHAT', 'parameters': { 'chatName': deepFreezedChat[chat] } });
       console.log('leaving chat' + chat);
     }
     console.log('leaving battle' + client.state.room);
     try {
-      this.processLoggedClient(client, {'action': 'LEAVEGAME', 'parameters': {'battleName': client.state.room}});
+      this.processLoggedClient(client, { 'action': 'LEAVEGAME', 'parameters': { 'battleName': client.state.room } });
     }
     catch {
       console.log('no more battles');
@@ -788,6 +785,27 @@ class LobbyServer {
     delete this.players[client.state.username];
   }
 
+
+
+  // let everyone in chat global hear the message said by the user
+  sayChatBridge(username, msg) {
+    const server = this;
+    if (!this.chats.chats['global']) return;
+
+    const pplObjs = this.usernames2ClientObj(server.chats.chats['global'].allMembers);
+    for (const ppl of pplObjs) {
+      // now let everyone else know
+      // the line below is used for plasmid statedump
+      ppl.state.writeChatMsg({
+        'author': username,
+        'msg': msg,
+        'chatName': 'global',
+      });
+      server.stateDump(ppl, 'SAYCHATBRIDGE');
+
+
+    }
+  }
   // set an event listener for client disconnect
 
   stateDump(ppl, triggeredBy = 'DefaultTrigger', reqId = 'defaultReq') {
@@ -808,6 +826,7 @@ class LobbyServer {
       'usrstats': ppl.state.getState(),
     };
     // console.log(ppl.state.getState());
+    // console.log(response);
     ppl.send(JSON.stringify({
       'id': reqId,
       'action': 'stateDump',
@@ -849,7 +868,7 @@ class LobbyServer {
         'mapOwningPlayers': mapOwningPlayersList,
         'battleName': this.rooms[battle].getTitle(),
         'isStarted': this.rooms[battle].checkStarted(),
-        'players': {'AIs': this.rooms[battle].ais, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens},
+        'players': { 'AIs': this.rooms[battle].ais, 'players': this.rooms[battle].players, 'chickens': this.rooms[battle].chickens },
         'map': this.rooms[battle].getMap(),
         'port': this.rooms[battle].getPort(),
         'ip': this.rooms[battle].getResponsibleAutohost(),

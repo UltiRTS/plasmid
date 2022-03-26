@@ -37,7 +37,7 @@ const config = {
 
 const debug = true;
 const bridgeUsername = 'Thea, Inc. signalCascade';
-const discordToken = '';
+const discordToken = 'OTU2NDAyNjgwMDc3NjQzODA3.YjvtaA.4JbW1OuByx70QqyvvJFvDRBhjbI';
 const ircServer = {
   addr: '185.205.246.232',
   port: 6667
