@@ -29,6 +29,7 @@ class LobbyServer {
       // when registering; if not, we reprompt the contract
       if (!sanityCheckClient()) return;
       if (message['action'] == 'LOGIN') {
+        if(!(message['parameters']['usr'] && message['parameters']['passwd'])) return;
         const username = message['parameters']['usr'];
         const password = message['parameters']['passwd'];
         if (server.players[username]) {
