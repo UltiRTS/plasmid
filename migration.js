@@ -1,4 +1,6 @@
-const {knexConf} = require('./config');
+const {dbConfig} = require('./config');
+const knexConf = dbConfig[dbConfig.useDB];
+
 const knex = require('knex')(knexConf);
 const {DataManager} = require('./lib/dataManager');
 

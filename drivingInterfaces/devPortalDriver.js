@@ -14,7 +14,7 @@ class DevPortalDriver {
     // uncomment when dev
     this.dataManager = new DataManager(knexConf);
 
-    this.invite_token = this.invite_token;
+    this.invite_token = config.invite_token;
 
     this.wss = new WebSocketServer({
       port: config.port
@@ -30,7 +30,8 @@ class DevPortalDriver {
         if(isBinary) return;
 
         const msg = JSON.parse(data);
-        this.processCommands(msg);
+        console.log(msg);
+        this.processCommands(ws, msg);
       });
       ws.on('close', (code, reason) => {
         if(ws.username) delete this.userTable[ws.username];
@@ -47,12 +48,13 @@ class DevPortalDriver {
           return;
         }
         const {username, password, priv_level, invite_token} = msg.parameters;
+        console.log(this.invite_token, invite_token);
         if(invite_token !== this.invite_token) {
           this.errorOut(ws, 'invite_token_invalid', 'register');
           return;
         }
 
-        const res = await this.dataManager.registerUser(username, password, priv_level)
+        const res = await this.dataManager.register(username, password, priv_level)
         this.respond(ws, {
           action: 'register',
           success: res,
@@ -138,11 +140,11 @@ class DevPortalDriver {
   }
 
   errorOut(ws, reason, action) {
-    ws.send({
+    ws.send(JSON.stringify({
       action: 'error',
       at: action,
       reason: reason,
-    });
+    }));
   }
 }
 

@@ -1,6 +1,6 @@
 const {WebSocket} = require('ws');
 
-const ws = new WebSocket('ws://localhost:10083');
+const ws = new WebSocket('ws://localhost:10999');
 
 
 const registerMsg = {

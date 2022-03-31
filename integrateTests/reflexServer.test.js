@@ -10,4 +10,7 @@ const sharedConfig = {
   somekey: 'somevalue'
 }
 
-const DevPortalDriver = new DevPortalDriver(bus, dbm, sharedConfig);
+const devPortalDriver = new DevPortalDriver(bus, dbm, sharedConfig, {
+  port: 10999,
+  invite_token: 'token'
+});

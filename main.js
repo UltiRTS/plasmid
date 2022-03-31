@@ -21,6 +21,11 @@ global.eventEmitter = new EventEmitter();
 const {chatsPrototype} = require('./state/chats.js');
 const chatsObj = new chatsPrototype();
 
+const {DevPortalDriver} = require('./drivingInterfaces/devPortalDriver');
+const devPortalDriver = new DevPortalDriver(global.eventEmitter, sharedConfig, dataManager, config={
+  port: 10083,
+  invite_token: 'token'
+});
 /* START BUSINESS LOGIC*/
 
 
@@ -34,5 +39,6 @@ lobbyServer=new LobbyServer(Config.port, dataManager, autohostServer, chatsObj);
 
 const {CascadeRelay} = require('./drivingInterfaces/signalCascade');
 const {bridgeUsername, discordToken} = require('./config');
+const { globalAgent } = require('http');
 
 const cascade = new CascadeRelay(eventEmitter, lobbyServer, bridgeUsername, discordToken);
