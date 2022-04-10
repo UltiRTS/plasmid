@@ -81,6 +81,7 @@ class DevPortalDriver {
         } else {
           this.errorOut(ws, res, 'login');
         }
+        break;
       }
 
       case 'setSetting': {
@@ -101,6 +102,8 @@ class DevPortalDriver {
           success: true,
           payload: this.config2manipulate,
         });
+
+        break;
       }
 
       case 'getSetting': {
@@ -118,10 +121,12 @@ class DevPortalDriver {
           success: true,
           payload: this.config2manipulate
         });
+        break;
       }
       case 'logout': {
         if(!ws.username) return;
         this.userTable[ws.username] = null;
+        break;
       }
     }
   }
