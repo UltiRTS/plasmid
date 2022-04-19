@@ -37,7 +37,8 @@ class LobbyServer {
           return;
         }
         server.dataManager.login(username, password).then((res) => {
-          console.log('logining');
+          if(!res)
+            return
           server.dataManager.queryUser(username).then((user) => {
             server.dataManager.regConfirmed(user.username).then(async (confirmed) => {
               if (!confirmed) {
