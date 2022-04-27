@@ -106,6 +106,17 @@ async function createSchema() {
 
     console.log('Created chat history table');
   }
+  if(! await knex.schema.hasTable('assets')) {
+    await knex.schema.createTable('assets', (table) => {
+      table.increments();
+      table.string('name').notNullable();
+      table.string('type');
+      table.integer('value');
+      table.integer('ownerId').unsigned().references('users.id')
+        .onDelete('CASCADE');
+    })
+  }
+
   knex.destroy();
 
   const dbm = new DataManager(knexConf);
