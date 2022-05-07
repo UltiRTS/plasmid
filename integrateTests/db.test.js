@@ -1,5 +1,7 @@
-const {knexConf} = require('../config');
+const {dbConfig} = require('../config');
 const {DataManager} = require('../lib/dataManager');
+
+const knexConf = dbConfig[dbConfig.useDB];
 
 const dbm = new DataManager(knexConf);
 
@@ -10,7 +12,7 @@ const main = async () => {
   res = await dbm.register('world', 'pwd');
   console.log(res);
 
-  res = await dbm.queryUser('hello');
+  const userHello = await dbm.queryUser('hello');
   console.log(res);
   res = await dbm.login('hello', 'pwd');
   console.log(res);
@@ -62,6 +64,23 @@ const main = async () => {
     await dbm.pushSetting('setting1', 'test', 'test setting', 100);
   console.log(setting);
 
+  console.log('========== assets ==========');
+  const asset = {
+    name: 'test',
+    uri: 'test',
+    marketName: 'test',
+    value: 100,
+    ownerId: 1,
+  };
+  res = await dbm.assetPush(asset);
+  console.log(`push asset ${asset.name}: `, res);
+  const assets = await dbm.getAssetsByMarketName('test');
+  console.log('assets: ', assets);
+  res = await dbm.assetTransferTo(1, userHello.id, 1);
+  console.log(`transfer asset ${asset.name}: `, res);
+  res = await dbm.queryAsset(100);
+  if (res) console.log(`query asset ${res.name}: `, res);
+  else console.log('query asset failed');
 
   console.log('========== tidy up ===========');
   // remove waste
