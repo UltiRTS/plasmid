@@ -106,20 +106,22 @@ async function createSchema() {
 
     console.log('Created chat history table');
   }
-  if(! await knex.schema.hasTable('assets')) {
+  if (! await knex.schema.hasTable('assets')) {
     await knex.schema.createTable('assets', (table) => {
       table.increments();
       table.string('name').notNullable();
-      table.string('type');
+      table.string('uri').notNullable();
+      table.string('marketName').notNullable();
       table.integer('value');
       table.integer('ownerId').unsigned().references('users.id')
-        .onDelete('CASCADE');
-    })
+          .onDelete('CASCADE');
+    });
   }
 
   knex.destroy();
 
   const dbm = new DataManager(knexConf);
+  await dbm.register('root', 'rootpassword');
   await dbm.register('test4', 'testpassword');
   console.log('Registered test4');
   await dbm.register('test', 'testpassword');
