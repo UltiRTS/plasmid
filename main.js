@@ -39,6 +39,5 @@ lobbyServer=new LobbyServer(Config.port, dataManager, autohostServer, chatsObj);
 
 const {CascadeRelay} = require('./drivingInterfaces/signalCascade');
 const {bridgeUsername, discordToken} = require('./config');
-const { globalAgent } = require('http');
 
 const cascade = new CascadeRelay(eventEmitter, lobbyServer, bridgeUsername, discordToken);

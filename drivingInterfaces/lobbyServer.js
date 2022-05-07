@@ -833,7 +833,7 @@ class LobbyServer {
       'id': reqId,
       'action': 'stateDump',
       triggeredBy,
-      'paramaters': response,
+      paramaters: response,
     }));
     ppl.state.eraseChatMsg();
   }
