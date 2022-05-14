@@ -121,7 +121,12 @@ class LobbyServer {
         //      });
         // }
       } else if (client.state.loggedIn) {
-        server.processLoggedClient(client, message);
+        try{
+          server.processLoggedClient(client, message);
+        }
+        catch(e){
+          server.clientSendNotice(client, 'error', 'Command discarded due to internal server error');
+        }
       } else {
         eventEmitter.emit('clearFromLobbyMemory', client);
       }
@@ -262,7 +267,7 @@ class LobbyServer {
               });
               server.stateDump(ppl, 'SAYCHAT', reqId);
 
-              /* his.chats.channelWriteLastMessage(chatName, chatMsg);*/
+              if (chatName == 'global')
               eventEmitter.emit('bridgeMessage', {'action': 'plasmidLobbyMsg', 'parameters': {'sender': client.state.username, 'msg': chatMsg}});
             }
           });
