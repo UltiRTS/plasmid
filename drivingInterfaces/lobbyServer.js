@@ -120,7 +120,13 @@ class LobbyServer {
         //        loginClientWithLimitsCheck(dbRet);
         //      });
         // }
-      } else if (client.state.loggedIn) {
+      } 
+      else if (!client.state)
+      {
+        eventEmitter.emit('clearFromLobbyMemory', client);
+        return;
+      }
+      else if (client.state.loggedIn) {
         try{
           server.processLoggedClient(client, message);
         }
