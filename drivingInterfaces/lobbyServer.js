@@ -123,7 +123,6 @@ class LobbyServer {
       } 
       else if (!client.state)
       {
-        eventEmitter.emit('clearFromLobbyMemory', client);
         return;
       }
       else if (client.state.loggedIn) {
