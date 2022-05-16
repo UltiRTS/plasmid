@@ -121,10 +121,7 @@ class LobbyServer {
         //      });
         // }
       } 
-      else if (!client.state)
-      {
-        return;
-      }
+
       else if (client.state.loggedIn) {
         try{
           server.processLoggedClient(client, message);
